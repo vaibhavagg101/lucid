@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: rgb(25, 39, 108);
+  --color-secondary: rgb(217, 217, 217);
+  --color-accent: rgb(77, 163, 255);
+  --color-text-p: rgb(17, 24, 39);
+  --color-text-s: rgb(107, 114, 128);
+  --color-surface: rgb(255, 255, 255);
+  --color-background: rgb(230, 230, 230);
+  --color-border: rgb(229, 231, 235);
+  --color-highlight: rgb(253, 255, 133);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-p);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.navbar {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  height: 4rem;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+}
+
+.layout {
+  margin-top: 4rem;
+  padding: 0.2rem;
+}
