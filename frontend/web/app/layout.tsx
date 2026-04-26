@@ -3,8 +3,8 @@ import "./globals.css";
 import Navbar from "./navbar/navbar";
 
 export const metadata: Metadata = {
-  title: "LUCID",
-  description: "Music deconstruction and analysis web app for musicians.",
+  title: "Home | LUCID",
+  description: "Audio deconstruction and music analysis web app for musicians.",
 };
 
 export default function RootLayout({
@@ -19,8 +19,8 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Navbar />
-        <div className="layout" >
-        {children}
+        <div>
+          {children}
         </div>
       </body>
     </html>

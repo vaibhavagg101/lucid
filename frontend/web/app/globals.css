@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
+/* 
+Reference to understand the use of defined color variables in @theme:
+https://m2.material.io/design/color/the-color-system.html#color-theme-creation 
+*/
 @theme {
   --color-primary: rgb(25, 39, 108);
-  --color-secondary: rgb(217, 217, 217);
-  --color-accent: rgb(77, 163, 255);
-  --color-text-p: rgb(17, 24, 39);
-  --color-text-s: rgb(107, 114, 128);
   --color-surface: rgb(255, 255, 255);
-  --color-background: rgb(230, 230, 230);
-  --color-border: rgb(229, 231, 235);
-  --color-highlight: rgb(253, 255, 133);
+  --color-background: rgb(248, 249, 252);
+  --color-secondary: rgb(0, 188, 212);
+  --color-primary-variant: rgb(15, 24, 74);
+  --color-surface-variant: rgb(242, 242, 242);
+  --color-error: rgb(179, 38, 30);
+  --color-on-primary: rgb(255, 255, 255);
+  --color-on-secondary: rgb(10, 15, 40);
+  --color-on-surface: rgb(28, 27, 31);
+  --color-on-background: rgb(28, 27, 31);
+  --color-on-surface-variant: rgb(100, 100, 105);
+  --color-on-error: rgb(255, 255, 255);
+  --color-outline: rgb(180, 180, 185);
+
+  /* --- TERTIARY / WARNING COLORS --- */
+  /* Generated using Google Gemini */
+  /* A soft, warm golden yellow. Strong enough to be seen against white, 
+     but not neon or harsh. */
+  --color-tertiary: rgb(255, 202, 40);
+
+  /* A very light, washed-out yellow specifically for background fills */
+  --color-tertiary-container: rgb(255, 248, 225);
+
+  /* Dark navy/black text for readability when placed on top of the yellow */
+  --color-on-tertiary: rgb(28, 27, 31);
 }
 
 body {
   background-color: var(--color-background);
-  color: var(--color-text-p);
+  color: var(--color-on-background);
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
 
-.navbar {
+.login-page-bg {
+  background: linear-gradient(180deg, rgba(25, 39, 108, 0), rgba(25, 39, 108, 1));
+}
+
+.glassmorphism-primary {
+  background: linear-gradient(140deg, rgba(25, 39, 108, 0.85), rgba(25, 39, 108, 1));
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glassmorphism-surface {
+  background: linear-gradient(0deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 1));
+  /* backdrop-filter: blur(8px); */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 2rem;
+  padding: 1rem;
+}
+
+.btn-primary {
   background-color: var(--color-primary);
-  color: var(--color-surface);
+  color: var(--color-on-primary);
+  border: 1px solid transparent;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background-color: var(--color-primary-variant);
+}
+
+.navbar {
+  color: var(--color-on-primary);
   height: 4rem;
   position: fixed;
   top: 0;
@@ -31,7 +80,11 @@ body {
   padding: 0 1rem;
 }
 
-.layout {
-  margin-top: 4rem;
+.main {
+  margin-top: 4rem; /* to prevent content from being hidden behind the navbar */
+  padding: 0.2rem;
+}
+
+.main-without-navbar {
   padding: 0.2rem;
 }
