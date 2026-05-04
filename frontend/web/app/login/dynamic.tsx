@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import lucidLogoOnSurface from '../../public/master-logo-on-surface.svg';
 import { signInWithGoogle } from '../google-firebase/authentication';
+import googleColor from '../../public/google-color.svg';
 
 export default function DynamicLoginPage() {
     const router = useRouter();
@@ -42,7 +43,7 @@ export default function DynamicLoginPage() {
                         onClick={handleGoogleSignIn}
                         className="w-full md:w-auto px-8 py-3 bg-surface text-on-surface-variant rounded-lg hover:bg-surface-variant cursor-pointer transition-colors duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
                     >
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo" className="w-5 h-5" />
+                        <Image src={googleColor} alt="Google Logo" className="w-5 h-5"/>
                         Sign in with Google
                     </button>
 

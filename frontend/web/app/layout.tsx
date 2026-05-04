@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "./navbar/navbar";
+import { AuthProvider } from "./context/auth-context";
 
 export const metadata: Metadata = {
   title: "Home | LUCID",
@@ -18,10 +19,12 @@ export default function RootLayout({
       className={`h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
-        <div>
-          {children}
-        </div>
+        <AuthProvider>
+          <Navbar />
+          <div>
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

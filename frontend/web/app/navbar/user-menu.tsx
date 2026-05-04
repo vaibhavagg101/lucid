@@ -1,14 +1,11 @@
 'use client';
 import { useRouter } from "next/navigation";
 import { signOutUser } from "../google-firebase/authentication";
-import { User } from "firebase/auth";
 import { useState } from "react";
+import { useAuth } from "../context/auth-context";
 
-interface SignInProps {
-  user: User | null;
-}
-
-export default function UserMenu({ user }: SignInProps) {
+export default function UserMenu() {
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -17,10 +14,10 @@ export default function UserMenu({ user }: SignInProps) {
       <div className="relative">
         <div className="hidden md:flex gap-4">
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/workspace")}
             className="text-on-primary px-4 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition"
           >
-            Dashboard
+            Workspace
           </button>
           <button
             onClick={signOutUser}
@@ -43,11 +40,11 @@ export default function UserMenu({ user }: SignInProps) {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  router.push("/dashboard");
+                  router.push("/workspace");
                 }}
                 className="block w-full text-left px-4 py-2 text-on-surface active:bg-surface-variant transition"
               >
-                Dashboard
+                Workspace
               </button>
               <button
                 onClick={() => {

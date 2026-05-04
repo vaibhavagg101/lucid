@@ -1,25 +1,14 @@
 'use client';
-import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { onAuthStateChangedListener } from '../google-firebase/authentication';
-import { User } from 'firebase/auth';
+import { useAuth } from '../context/auth-context';
 import UserMenu from './user-menu';
 import Image from 'next/image';
 import lucidLogoOnPrimary from '../../public/master-logo-on-primary.svg';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChangedListener((currentUser) => {
-      setUser(currentUser)
-    });
-
-    return () => {
-      unsubscribe()
-    };
-  }, [])
+  const router = useRouter();
 
   // Hide navbar on login page
   if (pathname === '/login') {
@@ -28,16 +17,10 @@ export default function Navbar() {
 
   return (
     <nav className="navbar glassmorphism-primary">
-      {user ? (
-        <>
-          <span className="text-on-primary">Welcome, {user.displayName}</span>
-        </>
-      ) : (
-        <span>
-          <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="w-40" />
-        </span>
-      )}
-      <UserMenu user={user} />
+      <span>
+        <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="w-40 hover:cursor-pointer" loading="eager" onClick={() => router.push('/')} />
+      </span>
+      <UserMenu />
     </nav>
   );
 }
