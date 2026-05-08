@@ -18,6 +18,12 @@ const ALLOWED_TYPES = [
     'audio/aac'
 ];
 const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac'];
+const EXTENSION_TO_TYPE_MAP: Record<string, string[]> = {
+    'wav': ['audio/wav', 'audio/x-wav'],
+    'mp3': ['audio/mpeg', 'audio/mp3'],
+    'm4a': ['audio/mp4', 'audio/x-m4a'],
+    'aac': ['audio/aac']
+};
 
 export default function NewAudio() {
     const { user, loading } = useAuth();
@@ -55,6 +61,18 @@ export default function NewAudio() {
             }
             return;
         }
+        
+        const fileExtension = extension || '';
+        const expectedTypes = EXTENSION_TO_TYPE_MAP[extension || ''];
+        const typeMatchesExtension = expectedTypes ? expectedTypes.includes(file.type) : false;
+
+        if (!typeMatchesExtension) {
+            setError(`File type does not match extension. Expected types for .${extension}: ${expectedTypes?.join(', ')}`);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            return;
+        }
 
         if (!user) {
             setError('You must be logged in to upload files.');
@@ -76,6 +94,7 @@ export default function NewAudio() {
                 user.uid,
                 audioId,
                 file,
+                fileExtension,
                 (p) => setProgress(p),
                 (err) => {
                     setError('Upload failed: ' + err.message);
@@ -180,7 +199,7 @@ export default function NewAudio() {
                                     border: 'none',
                                     borderRadius: '4px',
                                     cursor: 'pointer'
-                                }}
+                                }} className='m'
                             >
                                 Preview Noise Reduction
                             </button>
