@@ -7,3 +7,4 @@ matplotlib==3.10.8
 ffmpeg==1.4
 requests==2.33.1
 google-cloud-storage
+uvicorn==0.46.0

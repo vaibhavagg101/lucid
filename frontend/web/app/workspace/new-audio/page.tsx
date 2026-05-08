@@ -53,7 +53,6 @@ export default function NewAudio() {
         const extension = file.name.split('.').pop()?.toLowerCase();
         const isValidExtension = ALLOWED_EXTENSIONS.includes(extension || '');
         const isValidType = ALLOWED_TYPES.includes(file.type);
-
         if (!isValidExtension && !isValidType) {
             setError('Invalid file type. Only .wav, .mp3, and .m4a/.aac are allowed.');
             if (fileInputRef.current) {

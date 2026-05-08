@@ -1,8 +1,9 @@
 import io
 import base64
+from pydantic import BaseModel
 import numpy as np
 import noisereduce as nr
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydub import AudioSegment
 from pydub.effects import normalize
@@ -26,33 +27,6 @@ app.add_middleware(
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'm4a', 'aac'}
 
-def normalise(audio: AudioSegment):
-    samples = np.array(audio.get_array_of_samples())
-    
-    if audio.sample_width == 2:
-        samples = samples.astype(np.float32)
-        samples /= 32768.0
-    elif audio.sample_width in (3, 4):
-        samples = samples.astype(np.float32)
-        samples /= 2147483648.0
-    else:
-        raise ValueError(f"Unsupported bit depth: {audio.sample_width * 8}-bit")
-
-    return samples
-
-def denormalise(float_samples, sample_width=2):
-    float_samples = np.array(float_samples, dtype=np.float32)
-    float_samples = np.nan_to_num(float_samples)
-
-    if sample_width == 2:
-        scaled = float_samples * 32768.0
-        return np.clip(scaled, -32768, 32767).astype(np.int16)
-    elif sample_width in (3, 4):
-        scaled = float_samples * 2147483648.0
-        return np.clip(scaled, -2147483648, 2147483647).astype(np.int32)
-    else:
-        raise ValueError("Unsupported sample width. Use 2, 3 or 4.")
-
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
         storage_client = storage.Client()
@@ -71,13 +45,31 @@ def getFileFromGCS(gsBucket: str, filepath: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching file from Google Cloud Storage: {str(e)}")
 
+def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO) -> str:
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(gsBucket)
+        blob = bucket.blob(f"{filepath}/nr")
+        blob.upload_from_file(file_buffer)
+        return blob.generate_signed_url(expiration=3600, version='v4', method='GET')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading file to Google Cloud Storage: {str(e)}")
 
-# CRITICAL: Use `def` instead of `async def` here. 
-# Because noisereduce/matplotlib are synchronous and CPU-heavy, 
-# a standard `def` tells FastAPI to run this in a separate thread, 
-# preventing the main server loop from freezing!
+class NoiseReduceRequest(BaseModel):
+    gsBucket: str
+    filepath: str
+    noiseclip: bool
+    startPoint: Optional[int] = None
+    endPoint: Optional[int] = None
+
 @app.post('/noisereduce')
-def process_audio(gsBucket: str, filepath: str = None, noiseclip: bool = False, startPoint: Optional[int] = None, endPoint: Optional[int] = None):
+def process_audio(request: NoiseReduceRequest):
+    gsBucket = request.gsBucket
+    filepath = request.filepath
+    noiseclip = request.noiseclip
+    startPoint = request.startPoint
+    endPoint = request.endPoint
+
     if not gsBucket:
         raise HTTPException(status_code=400, detail="No gs bucket provided")
     if not filepath:
@@ -99,14 +91,10 @@ def process_audio(gsBucket: str, filepath: str = None, noiseclip: bool = False, 
         raise HTTPException(status_code=400, detail="Invalid file type. Only WAV, MP3, and M4A supported.")
 
     try:
-        # Pydub can read directly from the downloaded file-like object
         audio = AudioSegment.from_file(file, format=file_ext)
-        # samples = normalise(audio)
         samples = audio.to_numpy_array()
         if audio.channels == 2:
             samples = samples.reshape((-1, 2)).T
-        
-        # max_val_before = np.max(np.abs(samples))
 
         # Perform noise reduction
         if noiseclip:
@@ -114,11 +102,6 @@ def process_audio(gsBucket: str, filepath: str = None, noiseclip: bool = False, 
             reduced_noise = nr.reduce_noise(y=samples, y_noise=noise_clip, sr=audio.frame_rate, stationary=True, prop_decrease=0.8, n_jobs=-1)
         else:
             reduced_noise = nr.reduce_noise(y=samples, sr=audio.frame_rate, prop_decrease=0.8, n_jobs=-1)
-
-        # max_val_after = np.max(np.abs(reduced_noise))
-        # if max_val_after > 0.01:
-        #     makeup_gain = max_val_before / max_val_after
-        #     reduced_noise = reduced_noise * makeup_gain
         
         plot_samples = samples.T if samples.ndim > 1 else samples
         plot_reduced = reduced_noise.T if reduced_noise.ndim > 1 else reduced_noise
@@ -139,32 +122,31 @@ def process_audio(gsBucket: str, filepath: str = None, noiseclip: bool = False, 
         fig_red.savefig(reduced_image, format='png')
         plt.close(fig_red)
 
-        # Denormalise and export audio
-        # cleaned_samples = denormalise(reduced_noise, audio.sample_width)
         if audio.channels == 2:
             reduced_noise = reduced_noise.T.flatten()
-
         cleaned_audio = audio._spawn(reduced_noise.tobytes())
         cleaned_audio = normalize(cleaned_audio)
         out_buffer = io.BytesIO()
         cleaned_audio.export(out_buffer, format=file_ext)
         
+        original_image_url = uploadFileToGCS(gsBucket, filepath, original_image)
+        reduced_image_url = uploadFileToGCS(gsBucket, filepath, reduced_image)
+        nr_audio_url = uploadFileToGCS(gsBucket, filepath, out_buffer)
+
         # Convert to Base64
-        original_plot_base64 = base64.b64encode(original_image.getvalue()).decode('utf-8')
-        reduced_plot_base64 = base64.b64encode(reduced_image.getvalue()).decode('utf-8')
-        audio_base64 = base64.b64encode(out_buffer.getvalue()).decode('utf-8')
+        # original_plot_base64 = base64.b64encode(original_image.getvalue()).decode('utf-8')
+        # reduced_plot_base64 = base64.b64encode(reduced_image.getvalue()).decode('utf-8')
+        # audio_base64 = base64.b64encode(out_buffer.getvalue()).decode('utf-8')
 
         return {
-            'original_plot': original_plot_base64,
-            'reduced_plot': reduced_plot_base64,
-            'nr_audio': audio_base64
+            "original_plot_url": original_image_url,
+            "reduced_plot_url": reduced_image_url,
+            "nr_audio_url": nr_audio_url
         }
 
     except Exception as e:
-        # Let FastAPI handle the 500 error gracefully
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        # Always ensure the downloaded file is closed to free resources
         try:
             file.close()
         except Exception:
