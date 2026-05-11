@@ -9,6 +9,7 @@ export interface NoiseReduceResponse {
 export async function noiseReduce(
     gsBucket: string,
     filepath: string,
+    filetype: string,
     noiseclip: boolean,
     startPoint?: number,
     endPoint?: number
@@ -29,6 +30,7 @@ export async function noiseReduce(
     const body = {
         gsBucket,
         filepath,
+        filetype,
         noiseclip,
         ...(noiseclip && { startPoint, endPoint })
     };

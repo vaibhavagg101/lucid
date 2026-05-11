@@ -4,7 +4,8 @@ import { useState, useRef } from 'react';
 import { useAuth } from '../../context/auth-context';
 import { createAudioFileDocument } from '../../google-firebase/firestore';
 import { uploadAudioFile } from '../../google-firebase/storage';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
+import { noiseReduce, NoiseReduceResponse } from '@/app/actions/noisereduce';
 
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -33,6 +34,11 @@ export default function NewAudio() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [originalAudioId, setOriginalAudioId] = useState<string | null>(null);
     const [previewNoiseReduction, setPreviewNoiseReduction] = useState(false);
+    // Noise Reduce stuff
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [noiseReduceResult, setNoiseReduceResult] = useState<NoiseReduceResponse | null>(null);
+    const [uploadedFileExt, setUploadedFileExt] = useState<string | null>(null);
+    const [uploadedFileType, setUploadedFileType] = useState<string | null>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -60,7 +66,8 @@ export default function NewAudio() {
             }
             return;
         }
-        
+        setUploadedFileType(file.type);
+
         const fileExtension = extension || '';
         const expectedTypes = EXTENSION_TO_TYPE_MAP[extension || ''];
         const typeMatchesExtension = expectedTypes ? expectedTypes.includes(file.type) : false;
@@ -104,6 +111,7 @@ export default function NewAudio() {
                 },
                 () => {
                     setOriginalAudioId(audioId);
+                    setUploadedFileExt(fileExtension);
                     setUploading(false);
                     setProgress(100);
                     // Reset input
@@ -125,6 +133,32 @@ export default function NewAudio() {
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
+        }
+    };
+
+    const handleNoiseReduce = async () => {
+        if (!originalAudioId || !uploadedFileType || !user) return;
+
+        setIsProcessing(true);
+        setError(null);
+
+        try {
+            // NOTE: Ensure the gsBucket and filepath match your actual Firebase Storage structure.
+            const gsBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "Main-Audio-Files-Bucket";
+            const filepath = `${user.uid}/audio/${originalAudioId}.${uploadedFileExt}`;
+
+            const response = await noiseReduce(
+                gsBucket,
+                filepath,
+                uploadedFileType,
+                false // noiseclip
+            );
+
+            setNoiseReduceResult(response);
+        } catch (err) {
+            setError('Noise reduction failed: ' + (err instanceof Error ? err.message : String(err)));
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -190,18 +224,39 @@ export default function NewAudio() {
                         </br>
                         {previewNoiseReduction && originalAudioId && (
                             <button
-                                onClick={() => alert('Previewing noise reduction for audio ID: ' + originalAudioId)}
+                                onClick={handleNoiseReduce}
+                                disabled={isProcessing}
                                 style={{
                                     padding: '10px 20px',
-                                    backgroundColor: '#17a2b8',
+                                    cursor: isProcessing ? 'not-allowed' : 'pointer',
+                                    backgroundColor: isProcessing ? '#ccc' : '#28a745',
                                     color: '#fff',
                                     border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                }} className='m'
+                                    borderRadius: '4px'
+                                }}
                             >
-                                Preview Noise Reduction
+                                {isProcessing ? 'Processing...' : 'Preview Noise Reduction'}
                             </button>
+                        )}
+
+                        {noiseReduceResult && (
+                            <div style={{ marginTop: '30px', borderTop: '1px solid #ddd', paddingTop: '20px' }}>
+                                <h3>Noise Reduction Results</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
+                                    <div>
+                                        <h4>Original Audio Plot</h4>
+                                        <img src={noiseReduceResult.original_plot_url} alt="Original Audio Plot" style={{ width: '100%', maxWidth: '800px', borderRadius: '4px' }} />
+                                    </div>
+                                    <div>
+                                        <h4>Reduced Noise Plot</h4>
+                                        <img src={noiseReduceResult.reduced_plot_url} alt="Reduced Noise Audio Plot" style={{ width: '100%', maxWidth: '800px', borderRadius: '4px' }} />
+                                    </div>
+                                    <div>
+                                        <h4>Processed Audio</h4>
+                                        <audio controls src={noiseReduceResult.nr_audio_url} style={{ width: '100%', maxWidth: '400px' }} />
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
