@@ -1,7 +1,7 @@
 
 import { initializeApp } from "firebase/app";
-import { getAuth, User } from "firebase/auth";
-import { signInWithPopup, onAuthStateChanged, GoogleAuthProvider, signOut } from "firebase/auth";
+import { getAuth, GithubAuthProvider, User } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
@@ -19,6 +19,14 @@ const auth = getAuth(app);
 
 export function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({
+    prompt: "select_account",
+  });
+  return signInWithPopup(auth, provider);
+}
+
+export function signInWithGithub() {
+  const provider = new GithubAuthProvider();
   provider.setCustomParameters({
     prompt: "select_account",
   });

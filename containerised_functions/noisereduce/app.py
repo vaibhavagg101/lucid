@@ -32,7 +32,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://lucid--lucid-b0b9e.asia-east1.hosted.app"
+        "https://lucid--lucid-b0b9e.asia-east1.hosted.app",
+        "https://lucid.vaibhavaggarwal.dev"
     ],
     allow_credentials=True,
     allow_methods=["*"],

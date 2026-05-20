@@ -1,14 +1,13 @@
 'use client';
+
 import { usePathname } from 'next/navigation';
-import { useAuth } from '../context/auth-context';
 import UserMenu from './user-menu';
+import Link from 'next/link';
 import Image from 'next/image';
 import lucidLogoOnPrimary from '../../public/master-logo-on-primary.svg';
-import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
 
   // Hide navbar on login page
   if (pathname === '/login') {
@@ -16,10 +15,10 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="navbar glassmorphism-primary">
-      <span>
-        <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="w-40 hover:cursor-pointer" loading="eager" onClick={() => router.push('/')} />
-      </span>
+    <nav className="navbar glassmorphism-primary z-50">
+      <Link href="/">
+        <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="w-40" priority />
+      </Link>
       <UserMenu />
     </nav>
   );

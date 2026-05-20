@@ -21,14 +21,12 @@ https://m2.material.io/design/color/the-color-system.html#color-theme-creation
   --color-outline: rgb(180, 180, 185);
 
   /* --- TERTIARY / WARNING COLORS --- */
-  /* Generated using Google Gemini */
+  /* Generated using Google Gemini AI */
   /* A soft, warm golden yellow. Strong enough to be seen against white, 
      but not neon or harsh. */
   --color-tertiary: rgb(255, 202, 40);
-
   /* A very light, washed-out yellow specifically for background fills */
   --color-tertiary-container: rgb(255, 248, 225);
-
   /* Dark navy/black text for readability when placed on top of the yellow */
   --color-on-tertiary: rgb(28, 27, 31);
 }
@@ -39,20 +37,14 @@ body {
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
 
-.login-page-bg {
-  background: linear-gradient(180deg, rgba(25, 39, 108, 0), rgba(25, 39, 108, 1));
-}
-
 .glassmorphism-primary {
   background: linear-gradient(140deg, rgba(25, 39, 108, 0.85), rgba(25, 39, 108, 1));
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glassmorphism-surface {
-  background: linear-gradient(0deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 1));
-  /* backdrop-filter: blur(8px); */
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(0deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, 1));
+  backdrop-filter: blur(8px);
   border-radius: 2rem;
   padding: 1rem;
 }
@@ -81,7 +73,8 @@ body {
 }
 
 .main {
-  margin-top: 4rem; /* to prevent content from being hidden behind the navbar */
+  margin-top: 4rem;
+  /* to prevent content from being hidden behind the navbar */
   padding: 0.2rem;
 }
 

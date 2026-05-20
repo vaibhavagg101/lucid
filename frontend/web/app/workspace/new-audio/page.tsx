@@ -196,6 +196,14 @@ export default function NewAudio() {
                         >
                             {uploading ? 'Uploading...' : 'Upload Audio File'}
                         </button>
+                        <button>
+                            Record Audio
+                        </button>
+                        <button
+                            onClick={() => console.log('Open YouTube input box')}
+                        >
+                            Upload YouTube URL
+                        </button>
 
                         {progress > 0 && (
                             <div style={{ marginTop: '10px', maxWidth: '300px' }}>

@@ -43,9 +43,9 @@ export default function DynamicWorkspace() {
     }
 
     async function renameAudioFileHelper(audioId: string) {
-        const webSafeRegex = /^[a-zA-Z0-9.\-_]+$/;
+        const fileNameRegex = /^[a-zA-Z0-9.\-_()]+( [a-zA-Z0-9.\-_()]+)*$/;
         const newName = prompt('Enter new name for the audio file:');
-        if (user && newName && newName.trim() !== '' && newName.length <= 100 && webSafeRegex.test(newName)) {
+        if (user && newName && newName.trim() !== '' && newName.length <= 100 && fileNameRegex.test(newName)) {
             try {
                 await renameAudioFile(user.uid, audioId, newName);
                 setUserAudioFiles((prevFiles) =>
@@ -59,7 +59,7 @@ export default function DynamicWorkspace() {
             }
         }
         else {
-            alert('Invalid name. Please use 1-100 characters with letters, numbers, dots, dashes, or underscores only.');
+            alert('Invalid name. Please use 1-100 characters. Only letters, numbers, spaces, dots, dashes, underscores and parantheses are allowed.');
         }
     }
 
@@ -69,7 +69,7 @@ export default function DynamicWorkspace() {
             <button onClick={() => router.push('/workspace/new-audio')} className="btn btn-primary">
                 Create New Audio
             </button>
-            
+
             {audioFilesLoading ? (
                 <p>Loading your audio files...</p>
             ) : error ? (

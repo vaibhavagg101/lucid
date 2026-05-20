@@ -38,6 +38,7 @@ export const onNewUserSignIn = functionsV1.auth.user().onCreate(async (user) => 
         username: user.email?.split("@")[0] || "unknown",
         email: user.email,
         displayName: user.displayName,
+        youtubeUses: 0
     };
 
     await db.collection("users").doc(user.uid).set(userInfo);

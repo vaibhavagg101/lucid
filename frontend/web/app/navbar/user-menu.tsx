@@ -1,71 +1,194 @@
 'use client';
 import { useRouter } from "next/navigation";
 import { signOutUser } from "../google-firebase/authentication";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../context/auth-context";
+import type { User } from "firebase/auth";
+
+function getInitial(name: string | null | undefined): string {
+  if (!name) return "?";
+  const trimmed = name.trim();
+  return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : "?";
+}
+
+function Avatar({ user, sizeClass }: { user: User; sizeClass: string }) {
+  const label = user.displayName ?? user.email ?? "Profile";
+  if (user.photoURL) {
+    return (
+      // Plain <img> rather than next/image: avatar URLs come from external
+      // providers (Google, GitHub) and would require remotePatterns config.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={user.photoURL}
+        alt={label}
+        referrerPolicy="no-referrer"
+        className={`${sizeClass} rounded-full object-cover`}
+      />
+    );
+  }
+  return (
+    <div
+      className={`${sizeClass} rounded-full bg-secondary text-on-secondary flex items-center justify-center font-semibold`}
+      aria-label={label}
+    >
+      {getInitial(user.displayName ?? user.email)}
+    </div>
+  );
+}
 
 export default function UserMenu() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
+  const desktopRef = useRef<HTMLDivElement>(null);
 
-  return (user ?
-    (
-      <div className="relative">
-        <div className="hidden md:flex gap-4">
-          <button
-            onClick={() => router.push("/workspace")}
-            className="text-on-primary px-4 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition"
+  useEffect(() => {
+    if (!desktopOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (desktopRef.current && !desktopRef.current.contains(event.target as Node)) {
+        setDesktopOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [desktopOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileOpen]);
+
+  if (!user) {
+    return (
+      <button
+        onClick={() => router.push("/login")}
+        className="bg-primary-variant/75 text-on-primary px-4 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition"
+      >
+        Login to Get Started
+      </button>
+    );
+  }
+
+  const displayName = user.displayName ?? user.email ?? "User";
+
+  const navigateTo = (path: string) => {
+    setMobileOpen(false);
+    setDesktopOpen(false);
+    router.push(path);
+  };
+
+  const handleLogout = () => {
+    setMobileOpen(false);
+    setDesktopOpen(false);
+    signOutUser();
+  };
+
+  return (
+    <>
+      <div ref={desktopRef} className="relative hidden md:block">
+        <button
+          onClick={() => setDesktopOpen((open) => !open)}
+          className="flex items-center gap-3 px-2 py-1 rounded-2xl hover:bg-primary-variant cursor-pointer transition text-on-primary"
+          aria-haspopup="menu"
+          aria-expanded={desktopOpen}
+        >
+          <Avatar user={user} sizeClass="w-9 h-9" />
+          <span className="max-w-[12rem] truncate">{displayName}</span>
+          <svg
+            className={`w-4 h-4 transition-transform ${desktopOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            Workspace
-          </button>
-          <button
-            onClick={signOutUser}
-            className="text-on-primary px-4 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition"
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {desktopOpen && (
+          <div
+            className="glassmorphism-primary text-on-primary absolute right-0 mt-2 w-48 rounded-2xl shadow-lg py-2 z-50"
+            role="menu"
           >
-            Logout
-          </button>
-        </div>
-        <div className="md:hidden">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-on-primary px-2 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition flex items-center"
+            <button
+              onClick={handleLogout}
+              className="block w-full text-left px-4 py-2 hover:bg-primary-variant cursor-pointer transition"
+              role="menuitem"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="md:hidden">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="text-on-primary px-2 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition flex items-center"
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      {mobileOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-md bg-on-background/30 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="glassmorphism-primary text-on-primary relative w-[85%] max-w-sm rounded-3xl p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          {isOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-surface rounded-2xl shadow-lg py-2 z-10">
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="absolute top-3 right-3 p-1 rounded-full hover:bg-primary-variant cursor-pointer transition"
+              aria-label="Close menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-3 mt-2 mb-6 pr-8">
+              <Avatar user={user} sizeClass="w-12 h-12" />
+              <span className="text-lg font-semibold truncate">{displayName}</span>
+            </div>
+
+            <nav className="flex flex-col gap-1">
               <button
-                onClick={() => {
-                  setIsOpen(false);
-                  router.push("/workspace");
-                }}
-                className="block w-full text-left px-4 py-2 text-on-surface active:bg-surface-variant transition"
+                onClick={() => navigateTo('/')}
+                className="text-left px-4 py-3 rounded-2xl hover:bg-primary-variant active:bg-primary-variant cursor-pointer transition"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => navigateTo('/workspace')}
+                className="text-left px-4 py-3 rounded-2xl hover:bg-primary-variant active:bg-primary-variant cursor-pointer transition"
               >
                 Workspace
               </button>
               <button
-                onClick={() => {
-                  setIsOpen(false);
-                  signOutUser();
-                }}
-                className="block w-full text-left px-4 py-2 text-on-surface active:bg-surface-variant transition"
+                onClick={handleLogout}
+                className="text-left px-4 py-3 rounded-2xl hover:bg-primary-variant active:bg-primary-variant cursor-pointer transition"
               >
                 Logout
               </button>
-            </div>
-          )}
-        </div>
-      </div>
-    ) :
-    (
-      <button
-        onClick={() => router.push("/login")}
-        className="bg-surface text-on-secondary px-4 py-2 rounded-2xl hover:bg-surface-variant cursor-pointer transition"
-      >
-        Login
-      </button>
-    ))
+            </nav>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
 }
