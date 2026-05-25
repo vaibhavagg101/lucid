@@ -11,6 +11,7 @@ https://m2.material.io/design/color/the-color-system.html#color-theme-creation
   --color-secondary: rgb(0, 188, 212);
   --color-primary-variant: rgb(15, 24, 74);
   --color-surface-variant: rgb(242, 242, 242);
+  --color-secondary-variant: rgb(0, 166, 188);
   --color-error: rgb(179, 38, 30);
   --color-on-primary: rgb(255, 255, 255);
   --color-on-secondary: rgb(10, 15, 40);

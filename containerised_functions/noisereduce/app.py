@@ -40,7 +40,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ALLOWED_EXTENSIONS = {'wav', 'mp3', 'm4a', 'aac'}
+ALLOWED_EXTENSIONS = {'wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg'}
 
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
@@ -114,7 +114,7 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
         raise HTTPException(status_code=400, detail="Invalid file name in gs bucket. File name must include an extension.")
     file_ext = filename.rsplit('.', 1)[-1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail="Invalid file type was uploaded. Only WAV, MP3, M4A, and AAC files are supported.")
+        raise HTTPException(status_code=400, detail="Invalid file type was uploaded. Only WAV, MP3, M4A, AAC, WEBM, and OGG files are supported.")
 
     # Create file buffers for use in core logic
     # (initialising here to only prevent error in finally block)
@@ -133,7 +133,9 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
         if noiseclip:
             # Use noise clip if provided with stationary set to true
             # This will only work with constant noise in the audio; inform user on frontend accordingly
-            noise_clip = samples[:, startPoint:endPoint] if audio.channels == 2 else samples[startPoint:endPoint]
+            start_frame = int((startPoint / 1000.0) * audio.frame_rate)
+            end_frame = int((endPoint / 1000.0) * audio.frame_rate)
+            noise_clip = samples[:, start_frame:end_frame] if audio.channels == 2 else samples[start_frame:end_frame]
             reduced_noise = nr.reduce_noise(y=samples, y_noise=noise_clip, sr=audio.frame_rate, stationary=True, prop_decrease=0.8, n_jobs=-1)
         else:
             # No noiseclip provided by the user

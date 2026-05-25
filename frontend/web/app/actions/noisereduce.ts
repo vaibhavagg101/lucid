@@ -1,5 +1,8 @@
 'use server';
 
+import { getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+
 export interface NoiseReduceResponse {
     original_plot_url: string;
     reduced_plot_url: string;
@@ -7,6 +10,7 @@ export interface NoiseReduceResponse {
 }
 
 export async function noiseReduce(
+    token: string,
     gsBucket: string,
     filepath: string,
     filetype: string,
@@ -14,6 +18,24 @@ export async function noiseReduce(
     startPoint?: number,
     endPoint?: number
 ): Promise<NoiseReduceResponse> {
+
+    if (!getApps().length) {
+        initializeApp()
+    }
+
+    if (!token) {
+        throw new Error("Missing auth token.")
+    }
+
+    let userid: string
+    try {
+        // Verify the token and extract the user's UID
+        const decodedToken = await getAuth().verifyIdToken(token);
+        userid = decodedToken.uid;
+    } catch (error) {
+        throw new Error("Unauthenticated user.")
+    }
+
     const apiUrl = process.env.NOISEREDUCE_API_URL;
     const apiKey = process.env.NOISEREDUCE_API_KEY;
 

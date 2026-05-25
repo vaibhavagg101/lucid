@@ -6,19 +6,19 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../context/auth-context";
 import type { User } from "firebase/auth";
 
+// Generate initials from name
 function getInitial(name: string | null | undefined): string {
   if (!name) return "?";
   const trimmed = name.trim();
   return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : "?";
 }
 
+// Avatar generation using profile photo or initials
 function Avatar({ user, sizeClass }: { user: User; sizeClass: string }) {
   const label = user.displayName ?? user.email ?? "Profile";
   if (user.photoURL) {
     return (
-      // Plain <img> rather than next/image: avatar URLs come from external
-      // providers (Google, GitHub) and would require remotePatterns config.
-      // eslint-disable-next-line @next/next/no-img-element
+      // Plain <img> rather than next/image
       <img
         src={user.photoURL}
         alt={label}
@@ -91,41 +91,58 @@ export default function UserMenu() {
 
   return (
     <>
-      <div ref={desktopRef} className="relative hidden md:block">
-        <button
-          onClick={() => setDesktopOpen((open) => !open)}
-          className="flex items-center gap-3 px-2 py-1 rounded-2xl hover:bg-primary-variant cursor-pointer transition text-on-primary"
-          aria-haspopup="menu"
-          aria-expanded={desktopOpen}
-        >
-          <Avatar user={user} sizeClass="w-9 h-9" />
-          <span className="max-w-[12rem] truncate">{displayName}</span>
-          <svg
-            className={`w-4 h-4 transition-transform ${desktopOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {desktopOpen && (
-          <div
-            className="glassmorphism-primary text-on-primary absolute right-0 mt-2 w-48 rounded-2xl shadow-lg py-2 z-50"
-            role="menu"
-          >
-            <button
-              onClick={handleLogout}
-              className="block w-full text-left px-4 py-2 hover:bg-primary-variant cursor-pointer transition"
-              role="menuitem"
-            >
-              Logout
-            </button>
-          </div>
-        )}
-      </div>
+      <div ref={desktopRef} className="justify-center items-center relative md:flex not-md:hidden gap-6">
+        {/* Workspace button */}
+        <div>
+          <button
+            onClick={() => navigateTo("/workspace")}
+            className="px-3 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition text-on-primary">
+            Workspace
+          </button>
+        </div>
 
+        {/* Separator */}
+        <div className="h-6 w-px bg-on-primary opacity-30" aria-hidden="true" />
+
+        {/* Profile button */}
+        <div className="w-60 relative">
+          <button
+            onClick={() => setDesktopOpen((open) => !open)}
+            className="flex items-center gap-3 px-2 py-1 rounded-2xl hover:bg-primary-variant cursor-pointer transition text-on-primary"
+            aria-haspopup="menu"
+            aria-expanded={desktopOpen}
+          >
+            <Avatar user={user} sizeClass="w-9 h-9" />
+            <span className="max-w-[12rem] truncate">{displayName}</span>
+            <svg
+              className={`w-4 h-4 transition-transform ${desktopOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {/* Pop Up Menu Desktop */}
+          {desktopOpen && (
+            <div
+              className="flex glassmorphism-primary text-on-primary absolute w-[14rem] rounded-b-2xl text-center justify-center shadow-lg py-2 z-50"
+              role="menu"
+            >
+              <button
+                onClick={handleLogout}
+                className="block rounded-2xl w-10/12 text-center justify-center px-4 py-2 hover:bg-primary-variant cursor-pointer transition"
+                role="menuitem"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Mobile Menu */}
       <div className="md:hidden">
         <button
           onClick={() => setMobileOpen(true)}

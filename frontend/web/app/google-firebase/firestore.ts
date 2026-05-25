@@ -3,10 +3,13 @@ import { app } from './authentication';
 
 const db = getFirestore(app);
 
-export const createAudioFileDocument = async (userId: string, fileName: string) => {
+export const generateAudioDocumentId = () => {
+  return doc(collection(db, 'audio_files')).id;
+};
+
+export const createAudioFileDocument = async (audioId: string, userId: string, fileName: string) => {
   const audioFilesRef = collection(db, 'audio_files');
-  const newAudioDoc = doc(audioFilesRef);
-  const audioId = newAudioDoc.id;
+  const newAudioDoc = doc(audioFilesRef, audioId);
 
   await setDoc(newAudioDoc, {
     id: audioId,

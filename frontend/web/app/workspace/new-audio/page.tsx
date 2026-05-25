@@ -1,274 +1,279 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useContext, createContext, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/auth-context';
-import { createAudioFileDocument } from '../../google-firebase/firestore';
-import { uploadAudioFile } from '../../google-firebase/storage';
 import { useRouter } from 'next/navigation';
-import { noiseReduce, NoiseReduceResponse } from '@/app/actions/noisereduce';
+import RecordPath from './record-path'
+import UploadPath from './upload-path'
+import YtPath from './yt-path'
+import PreviewNoiseReduce from './preview-noisereduce';
+import StartAudioProcessing from './start-audio-processing';
+import Home from '@/app/page';
+import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 
+interface NewAudioContextType {
+    originalAudioId: string | null;
+    changeOriginalAudioId: (path: string) => void;
+    originalAudioBlob: Blob | null,
+    changeOriginalAudioBlob: (file: Blob) => void;
+    error: string | null;
+    changeError: (message: string | null) => void;
+    currentPath: string;
+    changeCurrentPath: (path: string) => void;
+}
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
-const ALLOWED_TYPES = [
-    'audio/wav',
-    'audio/x-wav',
-    'audio/mpeg',
-    'audio/mp3',
-    'audio/mp4',
-    'audio/x-m4a',
-    'audio/aac'
-];
-const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac'];
-const EXTENSION_TO_TYPE_MAP: Record<string, string[]> = {
-    'wav': ['audio/wav', 'audio/x-wav'],
-    'mp3': ['audio/mpeg', 'audio/mp3'],
-    'm4a': ['audio/mp4', 'audio/x-m4a'],
-    'aac': ['audio/aac']
-};
+export const NewAudioContext = createContext<NewAudioContextType>({
+    originalAudioId: null,
+    changeOriginalAudioId: (path: string) => { },
+    originalAudioBlob: null,
+    changeOriginalAudioBlob: (file: Blob) => { },
+    error: null,
+    changeError: (message: string | null) => { },
+    currentPath: "Home",
+    changeCurrentPath: (path: string) => { },
+});
 
 export default function NewAudio() {
-    const { user, loading } = useAuth();
-    const [uploading, setUploading] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [error, setError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    // Auth context 
+    const { user, loading } = useAuth()
+
+    // Local states passed as context
     const [originalAudioId, setOriginalAudioId] = useState<string | null>(null);
-    const [previewNoiseReduction, setPreviewNoiseReduction] = useState(false);
-    // Noise Reduce stuff
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [noiseReduceResult, setNoiseReduceResult] = useState<NoiseReduceResponse | null>(null);
-    const [uploadedFileExt, setUploadedFileExt] = useState<string | null>(null);
-    const [uploadedFileType, setUploadedFileType] = useState<string | null>(null);
+    const [originalAudioBlob, setOriginalAudioBlob] = useState<Blob | null>(null);
+    const [originalAudioWave, setOriginalAudioWave] = useState<WaveSurfer | null>(null);
+    const [originalAudioWavePlaying, setOriginalAudioWavePlaying] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const timeoutId = useRef<NodeJS.Timeout | null>(null); // Not passed as context
+    const [currentPath, setCurrentPath] = useState<string>("Home");
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    // WaveSurfer states
+    const [clipStartMs, setClipStartMs] = useState<number | null>(null);
+    const [clipEndMs, setClipEndMs] = useState<number | null>(null);
+    const [audioDurationStr, setAudioDurationStr] = useState<string>("00:00");
+    const wavesurferContainerRefOG = useRef<HTMLDivElement>(null)
+    const wsRegionsRef = useRef<any>(null);
 
-        setError(null);
-
-        // Validation: Size
-        if (file.size > MAX_FILE_SIZE) {
-            setError('File size must be less than 50 MB.');
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-            return;
-        }
-
-        // Validation: Type
-        const extension = file.name.split('.').pop()?.toLowerCase();
-        const isValidExtension = ALLOWED_EXTENSIONS.includes(extension || '');
-        const isValidType = ALLOWED_TYPES.includes(file.type);
-        if (!isValidExtension && !isValidType) {
-            setError('Invalid file type. Only .wav, .mp3, and .m4a/.aac are allowed.');
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-            return;
-        }
-        setUploadedFileType(file.type);
-
-        const fileExtension = extension || '';
-        const expectedTypes = EXTENSION_TO_TYPE_MAP[extension || ''];
-        const typeMatchesExtension = expectedTypes ? expectedTypes.includes(file.type) : false;
-
-        if (!typeMatchesExtension) {
-            setError(`File type does not match extension. Expected types for .${extension}: ${expectedTypes?.join(', ')}`);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-            return;
-        }
-
-        if (!user) {
-            setError('You must be logged in to upload files.');
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-            return;
-        }
-
-        try {
-            setUploading(true);
-            setProgress(0);
-
-            // 1. Add to Firestore to get ID
-            const audioId = await createAudioFileDocument(user.uid, file.name);
-
-            // 2. Upload to Storage
-            uploadAudioFile(
-                user.uid,
-                audioId,
-                file,
-                fileExtension,
-                (p) => setProgress(p),
-                (err) => {
-                    setError('Upload failed: ' + err.message);
-                    setUploading(false);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                },
-                () => {
-                    setOriginalAudioId(audioId);
-                    setUploadedFileExt(fileExtension);
-                    setUploading(false);
-                    setProgress(100);
-                    // Reset input
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                    // Optionally clear progress after a delay
-                    setTimeout(() => {
-                        setProgress(0);
-                    }, 3000);
-                    // Enable noise reduction preview
-                    setPreviewNoiseReduction(true);
-                },
-            );
-
-        } catch (err) {
-            setError('An error occurred: ' + (err instanceof Error ? err.message : String(err)));
-            setUploading(false);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
-    const handleNoiseReduce = async () => {
-        if (!originalAudioId || !uploadedFileType || !user) return;
+    useEffect(() => {
+        if (!wavesurferContainerRefOG.current) return;
 
-        setIsProcessing(true);
-        setError(null);
+        const regions = RegionsPlugin.create();
 
-        try {
-            // NOTE: Ensure the gsBucket and filepath match your actual Firebase Storage structure.
-            const gsBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "Main-Audio-Files-Bucket";
-            const filepath = `${user.uid}/audio/${originalAudioId}.${uploadedFileExt}`;
+        const wave = WaveSurfer.create(
+            {
+                container: wavesurferContainerRefOG.current,
+                height: 100,
+                waveColor: 'rgb(0, 188, 212)',
+                progressColor: 'rgb(10, 15, 40)',
+                plugins: [regions],
+                minPxPerSec: 50,
+            }
+        )
 
-            const response = await noiseReduce(
-                gsBucket,
-                filepath,
-                uploadedFileType,
-                false // noiseclip
-            );
+        wave.on('ready', () => {
+            setAudioDurationStr(formatTime(wave.getDuration()));
+        });
 
-            setNoiseReduceResult(response);
-        } catch (err) {
-            setError('Noise reduction failed: ' + (err instanceof Error ? err.message : String(err)));
-        } finally {
-            setIsProcessing(false);
+        wave.on('play', () => setOriginalAudioWavePlaying(true));
+        wave.on('pause', () => setOriginalAudioWavePlaying(false));
+
+        regions.on('region-update', (region) => {
+            setClipStartMs(Math.round(region.start * 1000));
+            setClipEndMs(Math.round(region.end * 1000));
+        });
+
+        // Add wheel event listener for native trackpad pinch/mouse-wheel zooming
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            const currentZoom = wave.options.minPxPerSec || 50;
+            if (e.deltaY < 0) {
+                // Zoom in
+                wave.zoom(currentZoom * 1.1);
+            } else {
+                // Zoom out
+                wave.zoom(Math.max(10, currentZoom / 1.1));
+            }
+        };
+        wavesurferContainerRefOG.current.addEventListener('wheel', handleWheel, { passive: false });
+
+        if (originalAudioBlob) {
+            wave.loadBlob(originalAudioBlob);
         }
+        setOriginalAudioWave(wave);
+        wsRegionsRef.current = regions;
+
+        return () => {
+            wavesurferContainerRefOG.current?.removeEventListener('wheel', handleWheel);
+            wave.destroy();
+            setOriginalAudioWave(null);
+            wsRegionsRef.current = null;
+        };
+    }, [originalAudioBlob]);
+
+    const handleSelectClip = useCallback(() => {
+        if (!wsRegionsRef.current || !originalAudioWave) return;
+        wsRegionsRef.current.clearRegions();
+        const duration = originalAudioWave.getDuration();
+        // Default region selection
+        const start = duration * 0.1;
+        const end = Math.min(duration * 0.3, duration);
+
+        wsRegionsRef.current.addRegion({
+            start: start,
+            end: end,
+            color: 'rgba(255, 202, 40, 0.4)',
+            resize: true,
+            drag: true,
+        });
+
+        setClipStartMs(Math.round(start * 1000));
+        setClipEndMs(Math.round(end * 1000));
+    }, [originalAudioWave]);
+
+    const handleDownload = () => {
+        if (!originalAudioBlob) return;
+        const url = URL.createObjectURL(originalAudioBlob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = (originalAudioBlob as File).name || 'downloaded_audio[lucid]';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     };
 
-    const triggerFileInput = () => {
-        fileInputRef.current?.click();
-    };
+    const handleChangeError = useCallback((message: string | null) => {
+        setError(message);
+        if (timeoutId.current) {
+            clearTimeout(timeoutId.current);
+        }
+        if (message) {
+            timeoutId.current = setTimeout(() => { setError(null) }, 10000)
+        }
+    }, []);
+
+    // Stop timeout after unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutId.current) clearTimeout(timeoutId.current);
+        };
+    }, []);
 
     return (
-        <>
-            <div className="main" style={{ padding: '20px' }}>
+        <NewAudioContext.Provider value={{
+            originalAudioId,
+            changeOriginalAudioId: setOriginalAudioId,
+            originalAudioBlob,
+            changeOriginalAudioBlob: setOriginalAudioBlob,
+            error,
+            changeError: handleChangeError,
+            currentPath,
+            changeCurrentPath: setCurrentPath,
+        }}>
+            <div className="main">
                 <div>
-                    {loading ? 'Loading...' : user ? `Welcome, ${user.displayName || user.email}` : 'Please log in.'}
+                    {loading ? 'Loading...' : user ? null : 'Please log in.'}
                 </div>
 
-                {user && (
-                    <div style={{ marginTop: '20px' }}>
-                        <input
-                            type="file"
-                            accept=".wav,.mp3,.m4a,.aac,audio/wav,audio/mpeg,audio/mp4,audio/aac"
-                            // style={{ display: 'none' }} 
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                        />
-                        <button
-                            onClick={triggerFileInput}
-                            disabled={uploading || originalAudioId !== null}
-                            style={{
-                                padding: '10px 20px',
-                                cursor: uploading || originalAudioId !== null ? 'not-allowed' : 'pointer',
-                                backgroundColor: uploading || originalAudioId !== null ? '#ccc' : '#007bff',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '4px'
-                            }}
-                        >
-                            {uploading ? 'Uploading...' : 'Upload Audio File'}
-                        </button>
-                        <button>
-                            Record Audio
-                        </button>
-                        <button
-                            onClick={() => console.log('Open YouTube input box')}
-                        >
-                            Upload YouTube URL
-                        </button>
+                {/* Waveform of Original Audio File */}
+                {originalAudioBlob && (
+                    <div className='glassmorphism-surface shadow-md w-[95%] mx-auto mt-4 flex flex-col gap-2'>
+                        <div ref={wavesurferContainerRefOG} className="w-full relative bg-surface-variant rounded overflow-hidden"></div>
+                        <div className="w-full flex justify-between text-xs text-on-surface-variant px-1 mt-1">
+                            <span>0:00</span>
+                            <span>{audioDurationStr}</span>
+                        </div>
 
-                        {progress > 0 && (
-                            <div style={{ marginTop: '10px', maxWidth: '300px' }}>
-                                <div style={{ width: '100%', backgroundColor: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
-                                    <div
-                                        style={{
-                                            width: `${progress}%`,
-                                            height: '10px',
-                                            backgroundColor: '#28a745',
-                                            transition: 'width 0.2s ease-in-out'
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ fontSize: '12px', marginTop: '4px', color: '#555' }}>
-                                    {Math.round(progress)}%
-                                </div>
-                            </div>
-                        )}
-
-                        {error && (
-                            <div style={{ color: 'red', marginTop: '10px', fontSize: '14px' }}>
-                                {error}
-                            </div>
-                        )}
-                        <br>
-                        </br>
-                        {previewNoiseReduction && originalAudioId && (
-                            <button
-                                onClick={handleNoiseReduce}
-                                disabled={isProcessing}
-                                style={{
-                                    padding: '10px 20px',
-                                    cursor: isProcessing ? 'not-allowed' : 'pointer',
-                                    backgroundColor: isProcessing ? '#ccc' : '#28a745',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '4px'
-                                }}
-                            >
-                                {isProcessing ? 'Processing...' : 'Preview Noise Reduction'}
+                        <div className="flex gap-4 items-center mt-2">
+                            <button onClick={() => { originalAudioWave?.playPause() }} className='btn-primary px-4 py-2 rounded'>
+                                {originalAudioWavePlaying ? 'Pause' : 'Play'}
                             </button>
-                        )}
-
-                        {noiseReduceResult && (
-                            <div style={{ marginTop: '30px', borderTop: '1px solid #ddd', paddingTop: '20px' }}>
-                                <h3>Noise Reduction Results</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
-                                    <div>
-                                        <h4>Original Audio Plot</h4>
-                                        <img src={noiseReduceResult.original_plot_url} alt="Original Audio Plot" style={{ width: '100%', maxWidth: '800px', borderRadius: '4px' }} />
-                                    </div>
-                                    <div>
-                                        <h4>Reduced Noise Plot</h4>
-                                        <img src={noiseReduceResult.reduced_plot_url} alt="Reduced Noise Audio Plot" style={{ width: '100%', maxWidth: '800px', borderRadius: '4px' }} />
-                                    </div>
-                                    <div>
-                                        <h4>Processed Audio</h4>
-                                        <audio controls src={noiseReduceResult.nr_audio_url} style={{ width: '100%', maxWidth: '400px' }} />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                            <button onClick={handleDownload} className='btn-primary px-4 py-2 rounded'>
+                                Download Audio
+                            </button>
+                        </div>
                     </div>
                 )}
+
+                {user &&
+                    <div>
+                        {(() => {
+                            switch (currentPath) {
+                                case "Home":
+                                    return (
+                                        <div className='user-input-form flex gap-6'>
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentPath("UploadPath")
+                                                }}
+                                                className='btn-primary px-4 py-2 rounded'
+                                            >
+                                                Upload Audio File from Device
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentPath("RecordPath")
+                                                }}
+                                                className='btn-primary px-4 py-2 rounded'>
+                                                Record Audio
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentPath("YtPath")
+                                                }}
+                                                className='btn-primary px-4 py-2 rounded'>
+                                                Download Audio using YouTube Link
+                                            </button>
+
+                                            {/* TEMPORARY TEST BUTTON */}
+                                            {/* <input
+                                                type="file"
+                                                accept="audio/*"
+                                                className="hidden"
+                                                id="test-local-file-input"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        setOriginalAudioBlob(file);
+                                                        setOriginalAudioId("mock-test-id-123");
+                                                        setCurrentPath("PreviewNoiseReduce");
+                                                    }
+                                                }}
+                                            />
+                                            <button
+                                                onClick={() => document.getElementById('test-local-file-input')?.click()}
+                                                className="bg-error text-white px-4 py-2 rounded shadow-md hover:bg-red-600 transition-colors"
+                                            >
+                                                [Test] Load Local Audio
+                                            </button> */}
+                                        </div>
+                                    );
+                                case "RecordPath":
+                                    return <RecordPath />;
+                                case "UploadPath":
+                                    return <UploadPath />;
+                                case "YtPath":
+                                    return <YtPath />;
+                                case "PreviewNoiseReduce":
+                                    return <PreviewNoiseReduce
+                                        clipStartMs={clipStartMs}
+                                        clipEndMs={clipEndMs}
+                                        handleSelectClip={handleSelectClip}
+                                    />;
+                                case "StartAudioProcessing":
+                                    return <StartAudioProcessing />;
+                            }
+                        })()}
+                    </div>
+                }
             </div>
-        </>
+        </NewAudioContext.Provider>
     )
 }

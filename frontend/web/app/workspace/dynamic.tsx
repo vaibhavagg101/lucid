@@ -98,6 +98,7 @@ export default function DynamicWorkspace() {
                                     <button onClick={() => router.push(`/workspace/audio/${file.id}`)}>
                                         View
                                     </button>
+
                                 </td>
                             </tr>
                         ))}
