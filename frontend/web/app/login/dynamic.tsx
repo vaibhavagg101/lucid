@@ -27,7 +27,7 @@ export default function DynamicLoginPage() {
     };
 
     return (
-        <div className="main-without-navbar relative grid lg:grid-cols-2 grid-cols-1 min-h-screen min-w-screen items-center justify-center overflow-hidden">
+        <div className="main-without-navbar bg-background relative grid lg:grid-cols-2 grid-cols-1 min-h-screen min-w-screen items-center justify-center overflow-hidden">
             <div className="relative z-20 mx-auto lg:block hidden">
                 <Image
                     src={cassetteImage}

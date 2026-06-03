@@ -70,7 +70,8 @@ export default function UserMenu() {
         onClick={() => router.push("/login")}
         className="bg-primary-variant/75 text-on-primary px-4 py-2 rounded-2xl hover:bg-primary-variant cursor-pointer transition"
       >
-        Login to Get Started
+        <p className="hidden not-md:block">Login</p>
+        <p className="hidden md:block">Login to Get Started</p>
       </button>
     );
   }
