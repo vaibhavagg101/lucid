@@ -12,7 +12,6 @@ export default function Home() {
           loop
           playsInline
           preload="auto"
-          fetchPriority="high"
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
         >
           <source src="videos/noise-reduction-720.webm" type="video/webm" />
@@ -50,7 +49,6 @@ export default function Home() {
           loop
           playsInline
           preload="auto"
-          fetchPriority="high"
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
         >
           <source src="videos/track-separation-720.webm" type="video/webm" />
