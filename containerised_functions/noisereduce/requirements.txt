@@ -4,7 +4,5 @@ scipy==1.15.3
 numpy==2.2.6
 pydub==0.25.1
 matplotlib==3.10.8
-ffmpeg==1.4
-requests==2.33.1
-google-cloud-storage
+google-cloud-storage==3.11.0
 uvicorn==0.46.0

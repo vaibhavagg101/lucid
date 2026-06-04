@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydub import AudioSegment
 from pydub.effects import normalize
 from typing import Optional
-import requests
 from google.cloud import storage
 import matplotlib
 import numpy as np
@@ -47,18 +46,15 @@ def getFileFromGCS(gsBucket: str, filepath: str):
         storage_client = storage.Client()
         bucket = storage_client.bucket(gsBucket)
         blob = bucket.blob(filepath)
-        signed_url = blob.generate_signed_url(expiration=300, version='v4', method='GET')
-        response = requests.get(signed_url)
-        if response.status_code != 200:
-            raise HTTPException(status_code=502, detail=f"Failed to download file from {gsBucket}/{filepath}: {response.status_code} \nFailed Signed URL: {signed_url}")
-        file = io.BytesIO(response.content)
+        
+        file = io.BytesIO()
+        blob.download_to_file(file)
         file.seek(0)
         file.filename = filepath.split('/')[-1]
         return file
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching file from Google Cloud Storage: {str(e)}")
+        print(f"Error fetching file {filepath} from bucket {gsBucket}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch file from storage")
 
 def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case: str, filetype:  Optional[str] = None) -> str:
     try:
@@ -71,7 +67,8 @@ def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case:
             blob.upload_from_file(file_buffer, content_type=filetype)
         return blob.generate_signed_url(expiration=3600, version='v4', method='GET')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error uploading file to Google Cloud Storage: {str(e)}")
+        print(f"Error uploading file {filepath}/{case} to bucket {gsBucket}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload file to storage")
 
 class NoiseReduceRequest(BaseModel):
     gsBucket: str
@@ -107,23 +104,24 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
         if startPoint < 0 or endPoint <= startPoint:
             raise HTTPException(status_code=400, detail="Invalid noiseclip parameters. Ensure startPoint and endPoint are valid with endPoint > startPoint.")
 
-    file = getFileFromGCS(gsBucket, filepath)
-
-    filename = file.filename
-    if '.' not in filename:
-        raise HTTPException(status_code=400, detail="Invalid file name in gs bucket. File name must include an extension.")
-    file_ext = filename.rsplit('.', 1)[-1].lower()
-    if file_ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail="Invalid file type was uploaded. Only WAV, MP3, M4A, AAC, WEBM, and OGG files are supported.")
-
     # Create file buffers for use in core logic
     # (initialising here to only prevent error in finally block)
+    file = None
     original_image = None
     reduced_image = None
     out_buffer = None
     
     # CORE LOGIC
     try:
+        file = getFileFromGCS(gsBucket, filepath)
+
+        filename = file.filename
+        if '.' not in filename:
+            raise HTTPException(status_code=400, detail="Invalid file name in gs bucket. File name must include an extension.")
+        file_ext = filename.rsplit('.', 1)[-1].lower()
+        if file_ext not in ALLOWED_EXTENSIONS:
+            raise HTTPException(status_code=400, detail="Invalid file type was uploaded. Only WAV, MP3, M4A, AAC, WEBM, and OGG files are supported.")
+
         audio = AudioSegment.from_file(file, format=file_ext)
         samples = np.array(audio.get_array_of_samples())
         if audio.channels == 2:
@@ -135,21 +133,30 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
             # This will only work with constant noise in the audio; inform user on frontend accordingly
             start_frame = int((startPoint / 1000.0) * audio.frame_rate)
             end_frame = int((endPoint / 1000.0) * audio.frame_rate)
+            
+            if start_frame >= samples.shape[-1]:
+                raise HTTPException(status_code=400, detail="startPoint is beyond the duration of the audio")
+                
             noise_clip = samples[:, start_frame:end_frame] if audio.channels == 2 else samples[start_frame:end_frame]
-            reduced_noise = nr.reduce_noise(y=samples, y_noise=noise_clip, sr=audio.frame_rate, stationary=True, prop_decrease=0.8, n_jobs=-1)
+            reduced_noise = nr.reduce_noise(y=samples, y_noise=noise_clip, sr=audio.frame_rate, stationary=True, prop_decrease=0.8, n_jobs=2)
         else:
             # No noiseclip provided by the user
             # Stationary defaults to False
-            reduced_noise = nr.reduce_noise(y=samples, sr=audio.frame_rate, prop_decrease=0.8, n_jobs=-1)
+            reduced_noise = nr.reduce_noise(y=samples, sr=audio.frame_rate, prop_decrease=0.8, n_jobs=2)
         
         # GENERATE PLOTS
         # Displays before and after waveform of the audio to the user
         plot_samples = samples.T if samples.ndim > 1 else samples
         plot_reduced = reduced_noise.T if reduced_noise.ndim > 1 else reduced_noise
+        
+        # Downsample plots to prevent slowdown
+        step = max(1, plot_samples.shape[0] // 50000)
+        plot_samples_ds = plot_samples[::step]
+        plot_reduced_ds = plot_reduced[::step]
 
         # Original Plot
         fig_orig, ax_orig = plt.subplots(figsize=(20, 4))
-        ax_orig.plot(plot_samples)
+        ax_orig.plot(plot_samples_ds)
         ax_orig.set_title("Original Audio")
         original_image = io.BytesIO()
         fig_orig.savefig(original_image, format='png')
@@ -158,7 +165,7 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
         
         # Reduced Plot
         fig_red, ax_red = plt.subplots(figsize=(20, 4))
-        ax_red.plot(plot_reduced)
+        ax_red.plot(plot_reduced_ds)
         ax_red.set_title("Reduced Noise Audio")
         reduced_image = io.BytesIO()
         fig_red.savefig(reduced_image, format='png')
@@ -174,8 +181,8 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
         out_buffer.seek(0)
         
         # Upload files to GCS
-        original_image_url = uploadFileToGCS(gsBucket, filepath, original_image, "og-plot")
-        reduced_image_url = uploadFileToGCS(gsBucket, filepath, reduced_image, "reduced-plot")
+        original_image_url = uploadFileToGCS(gsBucket, filepath, original_image, "og-plot.png", "image/png")
+        reduced_image_url = uploadFileToGCS(gsBucket, filepath, reduced_image, "reduced-plot.png", "image/png")
         nr_audio_url = uploadFileToGCS(gsBucket, filepath, out_buffer, "nr-audio", filetype)
 
         return {
@@ -184,8 +191,11 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
             "nr_audio_url": nr_audio_url
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Internal error processing audio: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error occurred during audio processing")
     finally:
         # Clean up
         if file:

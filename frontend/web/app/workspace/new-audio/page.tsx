@@ -8,13 +8,16 @@ import UploadPath from './upload-path'
 import YtPath from './yt-path'
 import PreviewNoiseReduce from './preview-noisereduce';
 import StartAudioProcessing from './start-audio-processing';
-import Home from '@/app/page';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 
 interface NewAudioContextType {
     originalAudioId: string | null;
     changeOriginalAudioId: (path: string) => void;
+    fileExt: string | null;
+    changeFileExt: (fileExt: string | null) => void;
+    fileType: string | null;
+    changeFileType: (fileType: string | null) => void;
     originalAudioBlob: Blob | null,
     changeOriginalAudioBlob: (file: Blob) => void;
     error: string | null;
@@ -26,6 +29,10 @@ interface NewAudioContextType {
 export const NewAudioContext = createContext<NewAudioContextType>({
     originalAudioId: null,
     changeOriginalAudioId: (path: string) => { },
+    fileExt: null,
+    changeFileExt: (fileExt: string | null) => { },
+    fileType: null,
+    changeFileType: (fileType: string | null) => { },
     originalAudioBlob: null,
     changeOriginalAudioBlob: (file: Blob) => { },
     error: null,
@@ -34,31 +41,33 @@ export const NewAudioContext = createContext<NewAudioContextType>({
     changeCurrentPath: (path: string) => { },
 });
 
+export const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+};
+
 export default function NewAudio() {
     // Auth context 
     const { user, loading } = useAuth()
 
     // Local states passed as context
     const [originalAudioId, setOriginalAudioId] = useState<string | null>(null);
+    const [fileExt, setFileExt] = useState<string | null>(null);
+    const [fileType, setFileType] = useState<string | null>(null);
     const [originalAudioBlob, setOriginalAudioBlob] = useState<Blob | null>(null);
-    const [originalAudioWave, setOriginalAudioWave] = useState<WaveSurfer | null>(null);
-    const [originalAudioWavePlaying, setOriginalAudioWavePlaying] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const timeoutId = useRef<NodeJS.Timeout | null>(null); // Not passed as context
     const [currentPath, setCurrentPath] = useState<string>("Home");
-
+    
     // WaveSurfer states
     const [clipStartMs, setClipStartMs] = useState<number | null>(null);
     const [clipEndMs, setClipEndMs] = useState<number | null>(null);
     const [audioDurationStr, setAudioDurationStr] = useState<string>("00:00");
     const wavesurferContainerRefOG = useRef<HTMLDivElement>(null)
     const wsRegionsRef = useRef<any>(null);
-
-    const formatTime = (seconds: number) => {
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m}:${s < 10 ? '0' : ''}${s}`;
-    };
+    const originalAudioWave = useRef<WaveSurfer | null>(null);
+    const [originalAudioWavePlaying, setOriginalAudioWavePlaying] = useState<boolean>(false);
 
     useEffect(() => {
         if (!wavesurferContainerRefOG.current) return;
@@ -105,21 +114,21 @@ export default function NewAudio() {
         if (originalAudioBlob) {
             wave.loadBlob(originalAudioBlob);
         }
-        setOriginalAudioWave(wave);
+        originalAudioWave.current = wave;
         wsRegionsRef.current = regions;
 
         return () => {
             wavesurferContainerRefOG.current?.removeEventListener('wheel', handleWheel);
             wave.destroy();
-            setOriginalAudioWave(null);
+            originalAudioWave.current = null;
             wsRegionsRef.current = null;
         };
     }, [originalAudioBlob]);
 
     const handleSelectClip = useCallback(() => {
-        if (!wsRegionsRef.current || !originalAudioWave) return;
+        if (!wsRegionsRef.current || !originalAudioWave.current) return;
         wsRegionsRef.current.clearRegions();
-        const duration = originalAudioWave.getDuration();
+        const duration = originalAudioWave.current.getDuration();
         // Default region selection
         const start = duration * 0.1;
         const end = Math.min(duration * 0.3, duration);
@@ -170,6 +179,10 @@ export default function NewAudio() {
         <NewAudioContext.Provider value={{
             originalAudioId,
             changeOriginalAudioId: setOriginalAudioId,
+            fileExt,
+            changeFileExt: setFileExt,
+            fileType,
+            changeFileType: setFileType,
             originalAudioBlob,
             changeOriginalAudioBlob: setOriginalAudioBlob,
             error,
@@ -192,7 +205,7 @@ export default function NewAudio() {
                         </div>
 
                         <div className="flex gap-4 items-center mt-2">
-                            <button onClick={() => { originalAudioWave?.playPause() }} className='btn-primary px-4 py-2 rounded'>
+                            <button onClick={() => { originalAudioWave.current?.playPause() }} className='btn-primary px-4 py-2 rounded'>
                                 {originalAudioWavePlaying ? 'Pause' : 'Play'}
                             </button>
                             <button onClick={handleDownload} className='btn-primary px-4 py-2 rounded'>

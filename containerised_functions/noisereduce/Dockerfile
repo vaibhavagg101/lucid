@@ -15,4 +15,4 @@ COPY app.py .
 RUN useradd -m appuser
 USER appuser
 
-CMD ["python3", "app.py"]
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8080}"]

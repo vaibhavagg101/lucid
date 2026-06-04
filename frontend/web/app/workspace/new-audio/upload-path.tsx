@@ -14,14 +14,20 @@ const ALLOWED_TYPES = [
     'audio/mp3',
     'audio/mp4',
     'audio/x-m4a',
-    'audio/aac'
+    'audio/aac',
+    'audio/webm',
+    'audio/ogg',
+    'audio/x-ogg',
+    'application/ogg'
 ];
-const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac'];
+const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg'];
 const EXTENSION_TO_TYPE_MAP: Record<string, string[]> = {
     'wav': ['audio/wav', 'audio/x-wav'],
     'mp3': ['audio/mpeg', 'audio/mp3'],
     'm4a': ['audio/mp4', 'audio/x-m4a'],
-    'aac': ['audio/aac']
+    'aac': ['audio/aac'],
+    'webm': ['audio/webm'],
+    'ogg': ['audio/ogg', 'audio/x-ogg', 'application/ogg']
 };
 
 export default function UploadPath() {
@@ -29,11 +35,13 @@ export default function UploadPath() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [uploadedFileExt, setUploadedFileExt] = useState<string | null>(null);
-    const [uploadedFileType, setUploadedFileType] = useState<string | null>(null);
 
     const { originalAudioId,
         changeOriginalAudioId,
+        fileExt,
+        changeFileExt,
+        fileType,
+        changeFileType,
         originalAudioBlob,
         changeOriginalAudioBlob,
         changeCurrentPath,
@@ -53,21 +61,30 @@ export default function UploadPath() {
         }
 
         // Validation: Type
-        const extension = file.name.split('.').pop()?.toLowerCase();
-        const isValidExtension = ALLOWED_EXTENSIONS.includes(extension || '');
-        const isValidType = ALLOWED_TYPES.includes(file.type);
+        const extension = file.name.split('.').pop()?.toLowerCase() || '';
+        const isValidExtension = ALLOWED_EXTENSIONS.includes(extension);
+
+        // Fallback for file.type if it's missing or generic (e.g. application/octet-stream)
+        let resolvedType = file.type;
+        if (!resolvedType || resolvedType === 'application/octet-stream') {
+            const fallbackTypes = EXTENSION_TO_TYPE_MAP[extension];
+            if (fallbackTypes && fallbackTypes.length > 0) {
+                resolvedType = fallbackTypes[0];
+            }
+        }
+
+        const isValidType = ALLOWED_TYPES.includes(resolvedType);
         if (!isValidExtension && !isValidType) {
-            changeError('Invalid file type. Only .wav, .mp3, and .m4a/.aac are allowed.');
+            changeError('Invalid file type. Only .wav, .mp3, .m4a/.aac, .webm, and .ogg are allowed.');
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
             return;
         }
-        setUploadedFileType(file.type);
 
-        const fileExtension = extension || '';
-        const expectedTypes = EXTENSION_TO_TYPE_MAP[extension || ''];
-        const typeMatchesExtension = expectedTypes ? expectedTypes.includes(file.type) : false;
+        const fileExtension = extension;
+        const expectedTypes = EXTENSION_TO_TYPE_MAP[extension];
+        const typeMatchesExtension = expectedTypes ? expectedTypes.includes(resolvedType) : false;
 
         if (!typeMatchesExtension) {
             changeError(`File type does not match extension. Expected types for .${extension}: ${expectedTypes?.join(', ')}`);
@@ -112,7 +129,8 @@ export default function UploadPath() {
                         await createAudioFileDocument(audioId, user.uid, file.name);
 
                         changeOriginalAudioId(audioId);
-                        setUploadedFileExt(fileExtension);
+                        changeFileExt(fileExtension);
+                        changeFileType(resolvedType);
                         changeOriginalAudioBlob(file)
                         setUploading(false);
                         setProgress(100);
@@ -151,7 +169,7 @@ export default function UploadPath() {
                 <input
                     className="hidden"
                     type="file"
-                    accept=".wav,.mp3,.m4a,.aac,audio/wav,audio/mpeg,audio/mp4,audio/aac"
+                    accept=".wav,.mp3,.m4a,.aac,.webm,.ogg,audio/wav,audio/mpeg,audio/mp4,audio/aac,audio/webm,audio/ogg"
                     ref={fileInputRef}
                     onChange={handleFileChange}
                 />

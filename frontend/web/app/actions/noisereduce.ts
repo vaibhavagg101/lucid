@@ -3,13 +3,14 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
+
 export interface NoiseReduceResponse {
     original_plot_url: string;
     reduced_plot_url: string;
     nr_audio_url: string;
 }
 
-export async function noiseReduce(
+export interface NoiseReduceRequest {
     token: string,
     gsBucket: string,
     filepath: string,
@@ -17,23 +18,30 @@ export async function noiseReduce(
     noiseclip: boolean,
     startPoint?: number,
     endPoint?: number
-): Promise<NoiseReduceResponse> {
+}
+
+export async function noiseReduce(request: NoiseReduceRequest): Promise<NoiseReduceResponse> {
 
     if (!getApps().length) {
         initializeApp()
     }
 
-    if (!token) {
+    if (!request.token) {
         throw new Error("Missing auth token.")
     }
 
     let userid: string
     try {
         // Verify the token and extract the user's UID
-        const decodedToken = await getAuth().verifyIdToken(token);
+        const decodedToken = await getAuth().verifyIdToken(request.token);
         userid = decodedToken.uid;
     } catch (error) {
         throw new Error("Unauthenticated user.")
+    }
+
+    // Ensure the requested filepath belongs to the authenticated user
+    if (!request.filepath.startsWith(`${userid}/`)) {
+        throw new Error("Unauthorised: You do not have permission to access this file path.");
     }
 
     const apiUrl = process.env.NOISEREDUCE_API_URL;
@@ -43,18 +51,21 @@ export async function noiseReduce(
         throw new Error('Noise reduction API URL or API key is not configured.');
     }
 
-    if (noiseclip) {
-        if (startPoint === undefined || endPoint === undefined) {
+    if (request.noiseclip) {
+        if (request.startPoint === undefined || request.endPoint === undefined) {
             throw new Error("startPoint and endPoint are required when noiseclip is true");
         }
     }
 
     const body = {
-        gsBucket,
-        filepath,
-        filetype,
-        noiseclip,
-        ...(noiseclip && { startPoint, endPoint })
+        gsBucket: request.gsBucket,
+        filepath: request.filepath,
+        filetype: request.filetype,
+        noiseclip: request.noiseclip,
+        ...(request.noiseclip && {
+            startPoint: request.startPoint,
+            endPoint: request.endPoint
+        })
     };
 
     try {
