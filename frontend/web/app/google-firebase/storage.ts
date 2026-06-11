@@ -1,8 +1,8 @@
 
-import { getBlob, getStorage, ref, uploadBytesResumable, UploadTask } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable, UploadTask } from 'firebase/storage';
 import { app } from './authentication';
 
-const storage = getStorage(app, process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
+export const storage = getStorage(app, process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
 
 export const uploadAudioFile = (
   userId: string,

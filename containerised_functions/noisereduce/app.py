@@ -3,12 +3,15 @@ import io
 from pydantic import BaseModel
 import noisereduce as nr
 from fastapi import FastAPI, HTTPException, Security
-from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydub import AudioSegment
 from pydub.effects import normalize
 from typing import Optional
 from google.cloud import storage
+import firebase_admin
+from firebase_admin import credentials, firestore
+import base64
+import json
 import matplotlib
 import numpy as np
 matplotlib.use('Agg')
@@ -16,15 +19,10 @@ import matplotlib.pyplot as plt
 
 app = FastAPI(title="Noisereduce API - Google Cloud Run")
 
-API_KEY = os.getenv("NOISEREDUCE_API_KEY")
-if not API_KEY:
-    raise RuntimeError("NOISEREDUCE_API_KEY environment variable missing.")
-
-api_key_header = APIKeyHeader(name="X-API-Key")
-def get_api_key(api_key: str = Security(api_key_header)):
-    if api_key != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API Key")
-    return api_key
+# Initialize Firebase Admin
+if not firebase_admin._apps:
+    firebase_admin.initialize_app()
+db = firestore.client()
 
 # CORS
 app.add_middleware(
@@ -65,7 +63,9 @@ def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case:
             blob.upload_from_file(file_buffer)
         else:
             blob.upload_from_file(file_buffer, content_type=filetype)
-        return blob.generate_signed_url(expiration=3600, version='v4', method='GET')
+            
+        return f"{filepath}/{case}"
+        
     except Exception as e:
         print(f"Error uploading file {filepath}/{case} to bucket {gsBucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload file to storage")
@@ -79,7 +79,7 @@ class NoiseReduceRequest(BaseModel):
     endPoint: Optional[int] = None
 
 @app.post('/noisereduce')
-def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_key)):
+def process_audio(request: NoiseReduceRequest):
     gsBucket = request.gsBucket
     filepath = request.filepath
     filetype = request.filetype
@@ -176,19 +176,24 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
             reduced_noise = reduced_noise.T.flatten() # [ [L L L] [R R R] ] to [ L R L R L R ]
         cleaned_audio = audio._spawn(reduced_noise.tobytes())
         cleaned_audio = normalize(cleaned_audio)
+
         out_buffer = io.BytesIO()
-        cleaned_audio.export(out_buffer, format=file_ext)
+        if cleaned_audio.sample_width == 4 and file_ext == 'wav':
+            # Export 32-bit audio as 32-bit float (pcm_f32le) instead of 32-bit INT default
+            cleaned_audio.export(out_buffer, format=file_ext, parameters=["-acodec", "pcm_f32le"])
+        else:
+            cleaned_audio.export(out_buffer, format=file_ext)
         out_buffer.seek(0)
         
         # Upload files to GCS
-        original_image_url = uploadFileToGCS(gsBucket, filepath, original_image, "og-plot.png", "image/png")
-        reduced_image_url = uploadFileToGCS(gsBucket, filepath, reduced_image, "reduced-plot.png", "image/png")
-        nr_audio_url = uploadFileToGCS(gsBucket, filepath, out_buffer, "nr-audio", filetype)
+        original_image_path = uploadFileToGCS(gsBucket, filepath, original_image, "og-plot.png", "image/png")
+        reduced_image_path = uploadFileToGCS(gsBucket, filepath, reduced_image, "reduced-plot.png", "image/png")
+        nr_audio_path = uploadFileToGCS(gsBucket, filepath, out_buffer, f"nr-audio.{file_ext}", filetype)
 
         return {
-            "original_plot_url": original_image_url,
-            "reduced_plot_url": reduced_image_url,
-            "nr_audio_url": nr_audio_url
+            "original_plot_path": original_image_path,
+            "reduced_plot_path": reduced_image_path,
+            "nr_audio_path": nr_audio_path
         }
 
     except HTTPException:
@@ -208,6 +213,58 @@ def process_audio(request: NoiseReduceRequest, api_key: str = Security(get_api_k
             out_buffer.close()
         
         plt.close('all')
+
+class PubSubMessage(BaseModel):
+    message: dict
+
+@app.post('/noisereduce-pubsub')
+def process_audio_pubsub(pubsub_message: PubSubMessage):
+    if "data" not in pubsub_message.message:
+        return {"status": "error", "detail": "Invalid Pub/Sub message format"}
+        
+    try:
+        data = base64.b64decode(pubsub_message.message["data"]).decode("utf-8")
+        payload = json.loads(data)
+    except Exception as e:
+        print(f"Error decoding Pub/Sub message: {e}")
+        return {"status": "error", "detail": "Failed to decode payload"}
+        
+    jobId = payload.get('jobId')
+    if not jobId:
+        return {"status": "error", "detail": "No jobId provided"}
+
+    job_ref = db.collection('jobs').document(jobId)
+    
+    try:
+        request = NoiseReduceRequest(
+            gsBucket=payload.get('gsBucket'),
+            filepath=payload.get('filepath'),
+            filetype=payload.get('filetype'),
+            noiseclip=payload.get('noiseclip', False),
+            startPoint=payload.get('startPoint'),
+            endPoint=payload.get('endPoint')
+        )
+        
+        # Call the existing process_audio function directly
+        result = process_audio(request)
+        
+        # Update Firestore with success and paths
+        job_ref.update({
+            "status": "completed",
+            "original_plot_path": result["original_plot_path"],
+            "reduced_plot_path": result["reduced_plot_path"],
+            "nr_audio_path": result["nr_audio_path"]
+        })
+        
+    except HTTPException as e:
+        job_ref.update({"status": "failed", "error": str(e.detail)})
+        print(f"Job {jobId} failed with HTTPException: {e.detail}")
+    except Exception as e:
+        job_ref.update({"status": "failed", "error": "Internal processing error"})
+        print(f"Job {jobId} failed with Error: {e}")
+        
+    # Always return 200 to acknowledge the Pub/Sub message
+    return {"status": "processed"}
 
 if __name__ == '__main__':
     import uvicorn

@@ -4,6 +4,10 @@ import { noiseReduce, NoiseReduceRequest, NoiseReduceResponse } from '@/app/acti
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { formatTime, NewAudioContext } from './page';
 import { useAuth } from '@/app/context/auth-context';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/app/google-firebase/firestore';
+import { storage } from '@/app/google-firebase/storage';
+import { ref, getBlob } from 'firebase/storage';
 import WaveSurfer from 'wavesurfer.js';
 
 interface PreviewNoiseReduceProps {
@@ -20,7 +24,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
     const [optedForNoiseReduce, setOptedForNoiseReduce] = useState<boolean>(false)
     const [noiseClip, setNoiseClip] = useState(false)
     const [nrBlob, setNrBlob] = useState<Blob | null>(null)
-    const [loadingNrBlob, setLoadingNrBlob] = useState<boolean>(false)
+    const [loadingNr, setLoadingNr] = useState<boolean>(false)
     const [nrFilePath, setNrFilePath] = useState<string | null>(null)
     const [ogPlot, setOgPlot] = useState<string | null>(null)
     const [nrPlot, setNrPlot] = useState<string | null>(null)
@@ -30,35 +34,46 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
     const [nrAudioWavePlaying, setNrAudioWavePlaying] = useState<boolean>(false)
 
     useEffect(() => {
-        if (nrBlob) {
-            if (!wavesurferContainerRefNR.current) return;
+        if (nrBlob && !loadingNr) {
+            // Delay before creating the wave
+            const nrTimer = setTimeout(() => {
 
-            if (waveRef.current) {
-                waveRef.current.destroy()
-            }
+                if (!wavesurferContainerRefNR.current) return;
 
-            const wave = WaveSurfer.create(
-                {
-                    container: wavesurferContainerRefNR.current,
-                    height: 100,
-                    waveColor: 'rgb(28, 27, 31)',
-                    progressColor: 'rgb(255, 202, 40)',
-                    minPxPerSec: 50,
+                if (waveRef.current) {
+                    waveRef.current.destroy()
                 }
-            )
 
-            wave.on('play', () => setNrAudioWavePlaying(true));
-            wave.on('pause', () => setNrAudioWavePlaying(false));
-            
-            wave.loadBlob(nrBlob)
-            waveRef.current = wave
+                const wave = WaveSurfer.create(
+                    {
+                        container: wavesurferContainerRefNR.current,
+                        height: 100,
+                        waveColor: 'rgb(28, 27, 31)',
+                        progressColor: 'rgb(255, 202, 40)',
+                        minPxPerSec: 50,
+                    }
+                )
+
+                // debugging
+                wave.on('error', (err) => console.error("WaveSurfer Exception:", err));
+                wave.on('decode', (duration) => console.log("Decoded successfully. Duration:", duration));
+
+                wave.on('play', () => setNrAudioWavePlaying(true));
+                wave.on('pause', () => setNrAudioWavePlaying(false));
+
+                wave.loadBlob(nrBlob)
+                waveRef.current = wave
+            }, 100)
 
             return () => {
-                wave.destroy()
-                waveRef.current = null
+                clearTimeout(nrTimer)
+                if (waveRef.current) {
+                    waveRef.current.destroy()
+                    waveRef.current = null
+                }
             }
         }
-    }, [nrBlob])
+    }, [nrBlob, loadingNr])
 
     const callNoiseReduce = async () => {
         if (user) {
@@ -83,26 +98,53 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                         endPoint: clipEndMs
                     })
                 }
-                setLoadingNrBlob(true)
+                setLoadingNr(true)
                 const response = await noiseReduce(request)
-                if (response.nr_audio_url) {
-                    const audioBlob = await fetch(response.nr_audio_url).then((res) => res.blob())
-                    setNrBlob(audioBlob)
-                    setNrFilePath(`${user.uid}/audio/${originalAudioId}.${fileExt}/nr-audio`)
-                    const ogplot = await fetch(response.original_plot_url).then((res) => res.blob())
-                    const nrplot = await fetch(response.reduced_plot_url).then((res) => res.blob())
-                    if (ogplot && nrplot) {
-                        setOgPlot(URL.createObjectURL(ogplot))
-                        setNrPlot(URL.createObjectURL(nrplot))
-                    }
-                    setLoadingNrBlob(false)
+                if (response.jobId) {
+                    let unsub: (() => void) | undefined;
+                    unsub = onSnapshot(doc(db, 'jobs', response.jobId), async (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            if (data.status === 'completed') {
+                                try {
+                                    const rawBlob = await getBlob(ref(storage, data.nr_audio_path))
+                                    const audioBlob = new Blob([rawBlob], { type: filetype })
+                                    setNrBlob(audioBlob)
+
+                                    console.log("Blob size:", audioBlob.size, "bytes");
+                                    console.log("Blob type:", audioBlob.type);
+
+                                    setNrFilePath(data.nr_audio_path)
+
+                                    const ogplot = await getBlob(ref(storage, data.original_plot_path))
+
+                                    const nrplot = await getBlob(ref(storage, data.reduced_plot_path))
+
+                                    if (ogplot && nrplot) {
+                                        setOgPlot(URL.createObjectURL(ogplot))
+                                        setNrPlot(URL.createObjectURL(nrplot))
+                                    }
+                                } catch (e) {
+                                    console.error("Error fetching completed assets:", e)
+                                    changeError("Failed to fetch generated assets")
+                                } finally {
+                                    setLoadingNr(false)
+                                    if (unsub) unsub()
+                                }
+                            } else if (data.status === 'failed') {
+                                setLoadingNr(false)
+                                changeError("Noise reduction failed: " + (data.error || "Unknown error"))
+                                if (unsub) unsub()
+                            }
+                        }
+                    });
                 } else {
-                    setLoadingNrBlob(false)
-                    changeError("Noise reduction failed")
+                    setLoadingNr(false)
+                    changeError("Noise reduction failed in Nextjs Server")
                 }
             }
             catch (err) {
-                setLoadingNrBlob(false)
+                setLoadingNr(false)
                 console.error(err)
                 changeError("Noise reduction failed")
             }
@@ -137,9 +179,9 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                             null}
                         {!noiseClip && <button onClick={callNoiseReduce} className='btn-primary px-4 py-2 rounded w-fit'>Start Noise Reduction without Clip</button>}
 
-                        {loadingNrBlob && <div className="text-on-surface mt-4">Processing audio and generating plots...</div>}
+                        {loadingNr && <div className="text-on-surface mt-4">Processing audio and generating plots...</div>}
 
-                        {!loadingNrBlob && nrBlob && (
+                        {!loadingNr && nrBlob && (
                             <div className="flex flex-col gap-6 mt-6">
                                 <div>
                                     <h3 className="text-lg font-bold text-on-surface mb-2">Original Audio Plot</h3>
@@ -149,12 +191,12 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                     <h3 className="text-lg font-bold text-on-surface mb-2">Noise Reduced Plot</h3>
                                     {nrPlot && <img src={nrPlot} alt="Noise Reduced Audio Plot" className="w-full max-w-2xl border rounded shadow-sm" />}
                                 </div>
-                                
+
                                 <div className="w-full max-w-2xl">
                                     <h3 className="text-lg font-bold text-on-surface mb-2">Noise Reduced Audio</h3>
                                     <div ref={wavesurferContainerRefNR} className="w-full bg-surface border rounded"></div>
-                                    <button 
-                                        className="btn-primary mt-2 px-4 py-2 rounded" 
+                                    <button
+                                        className="btn-primary mt-2 px-4 py-2 rounded"
                                         onClick={() => waveRef.current?.playPause()}
                                     >
                                         {nrAudioWavePlaying ? 'Pause' : 'Play'}
@@ -184,40 +226,5 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                 )
             }
         </div>
-    )
-    // Noise Reduce stuff
-    // const [isProcessing, setIsProcessing] = useState(false);
-    // const [noiseReduceResult, setNoiseReduceResult] = useState<NoiseReduceResponse | null>(null);
-
-    // const [audioTrack, setAudioTrack] = useState<Blob | null>(null)
-
-    // const handleNoiseReduce = async () => {
-    //     if (!originalAudioId || !uploadedFileType || !user) return;
-
-    //     setIsProcessing(true);
-    //     setError(null);
-
-    //     try {
-    //         // NOTE: Ensure the gsBucket and filepath match your actual Firebase Storage structure.
-    //         const gsBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "Main-Audio-Files-Bucket";
-    //         const filepath = `${user.uid}/audio/${originalAudioId}.${uploadedFileExt}`;
-
-    //         const response = await noiseReduce(
-    //             gsBucket,
-    //             filepath,
-    //             uploadedFileType,
-    //             false // noiseclip
-    //         );
-
-    //         setNoiseReduceResult(response);
-    //     } catch (err) {
-    //         setError('Noise reduction failed: ' + (err instanceof Error ? err.message : String(err)));
-    //     } finally {
-    //         setIsProcessing(false);
-    //     }
-    // };
-
-    return (
-        <></>
     )
 }

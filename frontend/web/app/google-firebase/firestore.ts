@@ -1,7 +1,7 @@
 import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc } from 'firebase/firestore';
 import { app } from './authentication';
 
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
 export const generateAudioDocumentId = () => {
   return doc(collection(db, 'audio_files')).id;

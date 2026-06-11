@@ -2,12 +2,11 @@
 
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-
+import { getFirestore } from 'firebase-admin/firestore';
+import { PubSub } from '@google-cloud/pubsub';
 
 export interface NoiseReduceResponse {
-    original_plot_url: string;
-    reduced_plot_url: string;
-    nr_audio_url: string;
+    jobId: string;
 }
 
 export interface NoiseReduceRequest {
@@ -23,7 +22,9 @@ export interface NoiseReduceRequest {
 export async function noiseReduce(request: NoiseReduceRequest): Promise<NoiseReduceResponse> {
 
     if (!getApps().length) {
-        initializeApp()
+        initializeApp({
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        });
     }
 
     if (!request.token) {
@@ -36,19 +37,13 @@ export async function noiseReduce(request: NoiseReduceRequest): Promise<NoiseRed
         const decodedToken = await getAuth().verifyIdToken(request.token);
         userid = decodedToken.uid;
     } catch (error) {
-        throw new Error("Unauthenticated user.")
+        console.error("Firebase verifyIdToken error:", error);
+        throw new Error("Unauthenticated user.");
     }
 
     // Ensure the requested filepath belongs to the authenticated user
     if (!request.filepath.startsWith(`${userid}/`)) {
         throw new Error("Unauthorised: You do not have permission to access this file path.");
-    }
-
-    const apiUrl = process.env.NOISEREDUCE_API_URL;
-    const apiKey = process.env.NOISEREDUCE_API_KEY;
-
-    if (!apiUrl || !apiKey) {
-        throw new Error('Noise reduction API URL or API key is not configured.');
     }
 
     if (request.noiseclip) {
@@ -57,43 +52,39 @@ export async function noiseReduce(request: NoiseReduceRequest): Promise<NoiseRed
         }
     }
 
-    const body = {
-        gsBucket: request.gsBucket,
-        filepath: request.filepath,
-        filetype: request.filetype,
-        noiseclip: request.noiseclip,
-        ...(request.noiseclip && {
-            startPoint: request.startPoint,
-            endPoint: request.endPoint
-        })
-    };
+    const db = getFirestore();
+    const pubsub = new PubSub();
+    const topicName = process.env.NR_PUBSUB_TOPIC || 'noisereduce-topic';
 
     try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': apiKey
-            },
-            body: JSON.stringify(body)
+        // Create a new job document in Firestore
+        const jobRef = await db.collection('jobs').add({
+            userid,
+            status: 'processing',
+            filepath: request.filepath,
+            createdAt: new Date()
         });
 
-        if (!response.ok) {
-            let errorMessage;
-            try {
-                const errorData = await response.json();
-                if (errorData.detail) errorMessage = errorData.detail;
-            } catch (e) {
-                errorMessage = response.statusText ? response.statusText : 'Unknown error';
-            }
-            throw new Error(`Noise reduction API error (${response.status}): ${errorMessage}`);
-        }
+        const jobId = jobRef.id;
 
-        const result: NoiseReduceResponse = await response.json();
-        return result;
+        const payload = {
+            jobId,
+            gsBucket: request.gsBucket,
+            filepath: request.filepath,
+            filetype: request.filetype,
+            noiseclip: request.noiseclip,
+            ...(request.noiseclip && {
+                startPoint: request.startPoint,
+                endPoint: request.endPoint
+            })
+        };
 
+        const dataBuffer = Buffer.from(JSON.stringify(payload));
+        await pubsub.topic(topicName).publishMessage({ data: dataBuffer });
+        
+        return { jobId };
     } catch (error) {
-        console.error('Error during noise reduction:', error);
-        throw error;
+        console.error('Error starting noise reduction job:', error);
+        throw new Error('Failed to start noise reduction job');
     }
 }
