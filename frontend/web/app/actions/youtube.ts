@@ -3,28 +3,28 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { data } from 'framer-motion/client';
+import { storage } from '../google-firebase/storage';
+import { isValidYoutubeUrl, validateYoutubeVideoDuration } from '../utils/youtube-validation';
 
 interface youtubeURLRequest {
     url: string;
     token: string;
 }
 
-interface youtubeURLRequestAPI {
+interface youtubePubSubMessage {
+    jobId: string;
     url: string;
     userid: string;
     gsBucket: string;
 }
 
-interface youtubeURLResponse {
-    gsBucketURL?: string;
-    audioid?: string;
-    error?: string;
-}
-
-export async function processYoutubeURL(request: youtubeURLRequest): Promise<youtubeURLResponse> {
+export async function processYoutubeURL(request: youtubeURLRequest) {
 
     if (!getApps().length) {
-        initializeApp();
+        initializeApp({
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        });
     }
 
     if (!request.url || !request.token) {
@@ -33,9 +33,31 @@ export async function processYoutubeURL(request: youtubeURLRequest): Promise<you
         }
     }
 
+    if (!isValidYoutubeUrl(request.url)) {
+        return {
+            error: "Invalid YouTube URL format."
+        }
+    }
+
+    const durationCheck = await validateYoutubeVideoDuration(request.url);
+    if (!durationCheck.isValid) {
+        if (durationCheck.error) {
+            console.log("Video duration validation failed, but will be checked on the cloud function.")
+        }
+        return {
+            error: durationCheck.error || "Video duration validation failed."
+        }
+    }
+
     if (!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET) {
         return {
             error: "Missing Firebase storage bucket in the environment variables."
+        }
+    }
+
+    if (!process.env.YOUTUBE_PUBSUB_TOPIC) {
+        return {
+            error: "Missing Youtube PubSub Topic env variable"
         }
     }
 
@@ -50,74 +72,50 @@ export async function processYoutubeURL(request: youtubeURLRequest): Promise<you
         }
     }
 
-    const db = getFirestore();
-    const userDocRef = db.collection('users').doc(userid);
-    const userDoc = await userDocRef.get();
-
-    if (!userDoc.exists) {
-        return {
-            error: "User not found in database."
-        }
-    }
-
-    const userData = userDoc.data();
-    if (userData && userData.youtubeUses >= 3) {
-        return {
-            error: "Daily limit for YouTube URLs reached."
-        }
-    }
-
-    const url = request.url
-    const apiKey = process.env.YOUTUBE_API_KEY
-    if (!apiKey) {
-        return {
-            error: "Missing YouTube API key in the environment variables."
-        }
-    }
-
-    const apiUrl = process.env.YOUTUBE_API_URL;
-    if (!apiUrl) {
-        return {
-            error: "Missing YouTube API URL in the environment variables."
-        }
-    }
-
-    const body: youtubeURLRequestAPI = {
-        url: url,
-        userid: userid,
-        gsBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!
-    }
-
     try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': apiKey
-            },
-            body: JSON.stringify(body)
+        const db = getFirestore();
+        const userDocRef = db.collection('users').doc(userid);
+        const userDoc = await userDocRef.get();
+
+        if (!userDoc.exists) {
+            return {
+                error: "User not found in database."
+            }
+        }
+
+        const userData = userDoc.data();
+        if (userData && userData.youtubeUses >= 3) {
+            return {
+                error: "Daily limit for YouTube URLs reached."
+            }
+        }
+
+        const jobRef = await db.collection('jobs').add({
+            userid,
+            status: 'processing',
+            url: request.url,
+            createdAt: new Date()
         })
 
-        if (!response.ok) {
-            let errorMessage;
-            try {
-                const errorData = await response.json();
-                if (errorData.detail) errorMessage = errorData.detail;
-            } catch (e) {
-                errorMessage = response.statusText ? response.statusText : 'Unknown error';
-            }
-            return {
-                error: `API error (${response.status}): ${errorMessage}`
-            }
+        const jobId = jobRef.id
+
+        const { PubSub } = require('@google-cloud/pubsub')
+        const pubSubClient = new PubSub()
+        const topic = pubSubClient.topic(process.env.YOUTUBE_PUBSUB_TOPIC)
+
+        const data: youtubePubSubMessage = {
+            jobId: jobId,
+            url: request.url,
+            userid: userid,
+            gsBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET as string
         }
-        else {
-            const result: youtubeURLResponse = await response.json()
-            return result
-        }
+        const dataBuffer = Buffer.from(JSON.stringify(data))
+
+        await topic.publishMessage({ data: dataBuffer });
+        return { jobId: jobId }
     }
     catch (error) {
-        return {
-            error: "Error processing URL."
-        }
+        console.log(error)
+        throw new Error("Youtube URL to audio conversion failed")
     }
 }

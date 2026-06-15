@@ -21,7 +21,7 @@ const ALLOWED_TYPES = [
     'application/ogg'
 ];
 const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg'];
-const EXTENSION_TO_TYPE_MAP: Record<string, string[]> = {
+export const EXTENSION_TO_TYPE_MAP: Record<string, string[]> = {
     'wav': ['audio/wav', 'audio/x-wav'],
     'mp3': ['audio/mpeg', 'audio/mp3'],
     'm4a': ['audio/mp4', 'audio/x-m4a'],
