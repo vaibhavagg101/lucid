@@ -1,17 +1,24 @@
 'use client'
 
 import { useContext, useState, useRef, useEffect } from "react";
+import { useAuth } from "@/app/context/auth-context";
+import { generateAudioDocumentId, createAudioFileDocument } from '../../google-firebase/firestore';
+import { uploadAudioFile } from '../../google-firebase/storage';
 import { NewAudioContext } from "./page";
 import WaveSurfer from 'wavesurfer.js';
 
 export default function RecordPath() {
-    const { changeOriginalAudioBlob, changeError, changeCurrentPath } = useContext(NewAudioContext);
+    const { user, loading } = useAuth()
+    const { originalAudioBlob, changeOriginalAudioId, changeOriginalAudioBlob, changeFileType, changeFileExt, changeError, changeCurrentPath } = useContext(NewAudioContext)
 
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
+
+    const [uploadingBlob, setUploadingBlob] = useState<boolean>(false)
+    const [uploadProgress, setUploadProgress] = useState(0)
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -154,6 +161,16 @@ export default function RecordPath() {
         }
     }, [recordingTime, isRecording]);
 
+    const handleDiscard = () => {
+        setAudioBlob(null);
+        setRecordingTime(0);
+        if (wavesurferRef.current) {
+            wavesurferRef.current.destroy();
+            wavesurferRef.current = null;
+        }
+        setIsPlaying(false);
+    };
+
     const handleConfirm = () => {
         if (audioBlob) {
             const now = new Date();
@@ -179,22 +196,51 @@ export default function RecordPath() {
 
             const filename = `recording_${timestamp}.${extension}`;
             const file = new File([audioBlob], filename, { type: audioBlob.type });
-            
-            
 
-            changeOriginalAudioBlob(file);
-            changeCurrentPath("PreviewNoiseReduce");
-        }
-    };
+            try {
+                // setting here so the user can download the file in case of failure
+                changeOriginalAudioBlob(file)
 
-    const handleDiscard = () => {
-        setAudioBlob(null);
-        setRecordingTime(0);
-        if (wavesurferRef.current) {
-            wavesurferRef.current.destroy();
-            wavesurferRef.current = null;
+                if (!user) {
+                    throw new Error("Unauthorised. Login to upload.")
+                }
+
+                setUploadingBlob(true)
+                setUploadProgress(0)
+                const newDocId = generateAudioDocumentId()
+                uploadAudioFile(user.uid, newDocId, file, extension,
+                    (progress) => { setUploadProgress(progress) },
+                    (error) => {
+                        throw new Error(error.message)
+                    },
+                    async () => {
+                        try {
+                            await createAudioFileDocument(newDocId, user.uid, file.name);
+                        }
+                        catch (e) {
+                            throw new Error("Failed to update database.")
+                        }
+
+                        changeOriginalAudioId(newDocId)
+                        changeFileExt(extension)
+                        changeFileType(audioBlob.type)
+                        setUploadProgress(100)
+                        setUploadingBlob(false)
+
+                        handleDiscard()
+
+                        setTimeout(() => {
+                            setUploadProgress(0);
+                            changeCurrentPath("PreviewNoiseReduce")
+                        }, 1000);
+                    })
+            }
+            catch (error) {
+                console.log(error)
+                changeError(error as string)
+                return
+            }
         }
-        setIsPlaying(false);
     };
 
     // Initialize WaveSurfer when audioBlob is ready
@@ -264,6 +310,26 @@ export default function RecordPath() {
                 </div>
             )}
 
+            {uploadingBlob &&
+                <div>
+                    Your file is being uploaded to the cloud...
+                </div>
+            }
+
+            {uploadProgress > 0 && (
+                <div className="mt-2.5 max-w-1/2">
+                    <div className="w-full bg-surface-variant rounded overflow-hidden">
+                        <div
+                            className="h-2.5 bg-secondary transition-[width] duration-200 ease-in-out"
+                            style={{ width: `${uploadProgress}%` }}
+                        />
+                    </div>
+                    <div className="text-xs mt-1 text-on-surface-variant">
+                        {Math.round(uploadProgress)}%
+                    </div>
+                </div>
+            )}
+
             {!audioBlob ? (
                 <div className="flex flex-col items-center w-full">
                     <div className="text-5xl mb-6 text-on-surface">
@@ -318,12 +384,14 @@ export default function RecordPath() {
                     <div className="flex gap-4 w-full">
                         <button
                             onClick={handleDiscard}
+                            disabled={uploadingBlob}
                             className="flex-1 border-2 border-error text-error hover:bg-error hover:text-white hover:cursor-pointer font-semibold py-2.5 px-4 rounded-lg transition-colors"
                         >
                             Discard
                         </button>
                         <button
                             onClick={handleConfirm}
+                            disabled={uploadingBlob}
                             className="flex-1 bg-primary hover:bg-primary-variant text-white hover:cursor-pointer font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-md"
                         >
                             Use Recording

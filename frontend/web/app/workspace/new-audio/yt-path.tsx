@@ -78,10 +78,11 @@ export default function YtPath() {
 
     return (
         <div>
+            <p>This feature is currently blocked due to legal implications</p>
             {!loadingYT &&
                 <div>
                     <input type="text" ref={YTurlRef} />
-                    <button className="btn btn-primary" onClick={handleConvert}>
+                    <button className="btn btn-primary" disabled={true} onClick={handleConvert}>
                         Convert
                     </button>
                 </div>

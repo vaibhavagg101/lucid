@@ -5,7 +5,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { formatTime, NewAudioContext } from './page';
 import { useAuth } from '@/app/context/auth-context';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/app/google-firebase/firestore';
+import { db, updateNR } from '@/app/google-firebase/firestore';
 import { storage } from '@/app/google-firebase/storage';
 import { ref, getBlob } from 'firebase/storage';
 import WaveSurfer from 'wavesurfer.js';
@@ -102,42 +102,52 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                 const response = await noiseReduce(request)
                 if (response.jobId) {
                     let unsub: (() => void) | undefined;
-                    unsub = onSnapshot(doc(db, 'jobs', response.jobId), async (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            if (data.status === 'completed') {
-                                try {
-                                    const rawBlob = await getBlob(ref(storage, data.nr_audio_path))
-                                    const audioBlob = new Blob([rawBlob], { type: filetype })
-                                    setNrBlob(audioBlob)
+                    unsub = onSnapshot(
+                        doc(db, 'jobs', response.jobId),
+                        async (docSnap) => {
+                            if (docSnap.exists()) {
+                                const data = docSnap.data();
+                                if (data.status === 'completed') {
+                                    try {
+                                        const rawBlob = await getBlob(ref(storage, data.nr_audio_path))
+                                        const audioBlob = new Blob([rawBlob], { type: filetype })
+                                        setNrBlob(audioBlob)
 
-                                    console.log("Blob size:", audioBlob.size, "bytes");
-                                    console.log("Blob type:", audioBlob.type);
+                                        console.log("Blob size:", audioBlob.size, "bytes");
+                                        console.log("Blob type:", audioBlob.type);
 
-                                    setNrFilePath(data.nr_audio_path)
+                                        setNrFilePath(data.nr_audio_path)
 
-                                    const ogplot = await getBlob(ref(storage, data.original_plot_path))
+                                        const ogplot = await getBlob(ref(storage, data.original_plot_path))
 
-                                    const nrplot = await getBlob(ref(storage, data.reduced_plot_path))
+                                        const nrplot = await getBlob(ref(storage, data.reduced_plot_path))
 
-                                    if (ogplot && nrplot) {
-                                        setOgPlot(URL.createObjectURL(ogplot))
-                                        setNrPlot(URL.createObjectURL(nrplot))
+                                        if (ogplot && nrplot) {
+                                            setOgPlot(URL.createObjectURL(ogplot))
+                                            setNrPlot(URL.createObjectURL(nrplot))
+                                        }
+                                    } catch (e) {
+                                        console.error("Error fetching completed assets:", e)
+                                        changeError("Failed to fetch generated assets")
+                                    } finally {
+                                        setLoadingNr(false)
+                                        setNoiseClip(false)
+                                        if (unsub) unsub()
                                     }
-                                } catch (e) {
-                                    console.error("Error fetching completed assets:", e)
-                                    changeError("Failed to fetch generated assets")
-                                } finally {
+                                } else if (data.status === 'failed') {
                                     setLoadingNr(false)
+                                    changeError("Noise reduction failed: " + (data.error || "Unknown error"))
                                     if (unsub) unsub()
                                 }
-                            } else if (data.status === 'failed') {
-                                setLoadingNr(false)
-                                changeError("Noise reduction failed: " + (data.error || "Unknown error"))
-                                if (unsub) unsub()
                             }
+                        },
+                        (error) => {
+                            console.error("Firestore onSnapshot error:", error);
+                            changeError("Error checking job status. Check your Firestore Security Rules.");
+                            setLoadingNr(false);
+                            if (unsub) unsub();
                         }
-                    });
+                    );
                 } else {
                     setLoadingNr(false)
                     changeError("Noise reduction failed in Nextjs Server")
@@ -153,12 +163,51 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
 
     }
 
+    const pickNR = async () => {
+        try {
+            if (user && nrFilePath && nrBlob && originalAudioId) {
+                await updateNR(true, nrFilePath, user.uid, originalAudioId)
+                changeOriginalAudioBlob(nrBlob)
+                setNrBlob(null)
+                setOgPlot(null)
+                setNrPlot(null)
+                if (waveRef.current) {
+                    waveRef.current.destroy()
+                    waveRef.current = null
+                }
+                changeCurrentPath("StartAudioProcessing")
+            }
+        }
+        catch (e) {
+            console.log(e)
+            changeError(e instanceof Error ? e.message : String(e))
+        }
+    }
+
+    const pickOG = () => {
+        setNrBlob(null)
+        setOgPlot(null)
+        setNrPlot(null)
+        if (waveRef.current) {
+            waveRef.current.destroy()
+            waveRef.current = null
+        }
+        changeCurrentPath("StartAudioProcessing")
+    }
+
+    useEffect(() => {
+        return () => {
+            if (ogPlot) URL.revokeObjectURL(ogPlot);
+            if (nrPlot) URL.revokeObjectURL(nrPlot);
+        };
+    }, [ogPlot, nrPlot])
+
     return (
         <div className="flex flex-col gap-4">
             {optedForNoiseReduce
                 ? (
                     <>
-                        <div className="flex gap-4">
+                        {!nrBlob && <div className="flex gap-4">
                             <button onClick={() => { handleSelectClip(); setNoiseClip(true); }} className='btn-primary px-4 py-2 rounded'>
                                 Select Noise Clip
                             </button>
@@ -168,7 +217,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                     Selected: {clipStartMs}ms - {clipEndMs}ms
                                 </span>
                             )}
-                        </div>
+                        </div>}
 
                         {noiseClip ?
                             <div className="flex gap-4">
@@ -177,7 +226,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                             </div>
                             :
                             null}
-                        {!noiseClip && <button onClick={callNoiseReduce} className='btn-primary px-4 py-2 rounded w-fit'>Start Noise Reduction without Clip</button>}
+                        {!noiseClip && !nrBlob && <button onClick={callNoiseReduce} className='btn-primary px-4 py-2 rounded w-fit'>Start Noise Reduction without Clip</button>}
 
                         {loadingNr && <div className="text-on-surface mt-4">Processing audio and generating plots...</div>}
 
@@ -200,6 +249,15 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                         onClick={() => waveRef.current?.playPause()}
                                     >
                                         {nrAudioWavePlaying ? 'Pause' : 'Play'}
+                                    </button>
+                                </div>
+                                <div>
+                                    Pick noisereduced audio or use original audio instead?
+                                    <button onClick={pickNR} className='btn-primary px-4 py-2 rounded w-fit'>
+                                        Use NR audio
+                                    </button>
+                                    <button onClick={pickOG} className='btn-primary px-4 py-2 rounded w-fit'>
+                                        Use original audio
                                     </button>
                                 </div>
                             </div>

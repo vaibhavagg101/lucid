@@ -122,7 +122,7 @@ def process_audio(request: NoiseReduceRequest):
         if file_ext not in ALLOWED_EXTENSIONS:
             raise HTTPException(status_code=400, detail="Invalid file type was uploaded. Only WAV, MP3, M4A, AAC, WEBM, and OGG files are supported.")
 
-        audio = AudioSegment.from_file(file, format=file_ext)
+        audio = AudioSegment.from_file(file, format=(None if file_ext != "wav" else "wav"))
         samples = np.array(audio.get_array_of_samples())
         if audio.channels == 2:
             samples = samples.reshape((-1, 2)).T # [ L R L R L R ] to [ [L R] [L R] [L R] ] to [ [L L L] [R R R] ]

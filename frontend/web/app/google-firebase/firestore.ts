@@ -68,3 +68,33 @@ export const renameAudioFile = async (userId: string, audioId: string, newName: 
     throw error;
   }
 };
+
+export async function updateNR(pickedNR: boolean, filepath?: string, userId?: string, audioId?: string) {
+  if (pickedNR) {
+    if (!filepath || !userId || !audioId) {
+      throw new Error("Filepath, UserId, or AudioId not provided")
+    }
+    else {
+      const audioDocRef = doc(collection(db, 'audio_files'), audioId)
+      const audioDoc = await getDoc(audioDocRef)
+
+      if (!audioDoc.exists()) {
+        throw new Error('Audio file not found');
+      }
+
+      if (audioDoc.data().userId !== userId) {
+        throw new Error('Unauthorized');
+      }
+
+      try {
+        await updateDoc(audioDocRef, {
+          noiseReducedFilepath: filepath,
+          usingNoiseReduced: true
+        })
+      }
+      catch (e) {
+        throw new Error("Failed to update database")
+      }
+    }
+  }
+}
