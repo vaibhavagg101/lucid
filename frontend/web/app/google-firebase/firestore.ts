@@ -18,7 +18,7 @@ export const createAudioFileDocument = async (audioId: string, userId: string, f
     userId: userId,
     filepath: `${userId}/audio/${audioId}`,
     uploadedAt: new Date(),
-    usingNoiseReduced: false,
+    usingNoiseReduced: null,
     noiseReducedFilepath: null,
     separationOption: 0,
     bpm: null,
@@ -69,32 +69,38 @@ export const renameAudioFile = async (userId: string, audioId: string, newName: 
   }
 };
 
-export async function updateNR(pickedNR: boolean, filepath?: string, userId?: string, audioId?: string) {
-  if (pickedNR) {
-    if (!filepath || !userId || !audioId) {
-      throw new Error("Filepath, UserId, or AudioId not provided")
+export async function updateNR(pickedNR: boolean, userId: string, audioId: string, filepath?: string | null) {
+  if (!userId || !audioId) {
+    throw new Error("UserId, or AudioId not provided")
+  }
+  const audioDocRef = doc(collection(db, 'audio_files'), audioId)
+  const audioDoc = await getDoc(audioDocRef)
+
+  if (!audioDoc.exists()) {
+    throw new Error('Audio file not found');
+  }
+
+  if (audioDoc.data().userId !== userId) {
+    throw new Error('Unauthorized');
+  }
+
+  try {
+    if (pickedNR) {
+      if (!filepath) {
+        throw new Error("Filepath not provided.")
+      }
+      await updateDoc(audioDocRef, {
+        noiseReducedFilepath: filepath,
+        usingNoiseReduced: true
+      })
     }
     else {
-      const audioDocRef = doc(collection(db, 'audio_files'), audioId)
-      const audioDoc = await getDoc(audioDocRef)
-
-      if (!audioDoc.exists()) {
-        throw new Error('Audio file not found');
-      }
-
-      if (audioDoc.data().userId !== userId) {
-        throw new Error('Unauthorized');
-      }
-
-      try {
-        await updateDoc(audioDocRef, {
-          noiseReducedFilepath: filepath,
-          usingNoiseReduced: true
-        })
-      }
-      catch (e) {
-        throw new Error("Failed to update database")
-      }
+      await updateDoc(audioDocRef, {
+        usingNoiseReduced: false
+      })
     }
+  }
+  catch (e) {
+    throw new Error("Failed to update database")
   }
 }

@@ -166,7 +166,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
     const pickNR = async () => {
         try {
             if (user && nrFilePath && nrBlob && originalAudioId) {
-                await updateNR(true, nrFilePath, user.uid, originalAudioId)
+                await updateNR(true, user.uid, originalAudioId, nrFilePath)
                 changeOriginalAudioBlob(nrBlob)
                 setNrBlob(null)
                 setOgPlot(null)
@@ -184,7 +184,16 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
         }
     }
 
-    const pickOG = () => {
+    const pickOG = async () => {
+        try {
+            if (user && originalAudioId) {
+                await updateNR(false, user.uid, originalAudioId)
+            }
+        }
+        catch (e) {
+            console.log(e)
+            changeError(e instanceof Error ? e.message : String(e))
+        }
         setNrBlob(null)
         setOgPlot(null)
         setNrPlot(null)
@@ -275,6 +284,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                         </button>
                         <button
                             onClick={() => {
+                                pickOG()
                                 changeCurrentPath("StartAudioProcessing")
                             }}
                             className='btn-primary px-4 py-2 rounded'>

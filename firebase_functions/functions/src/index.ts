@@ -7,11 +7,12 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import { setGlobalOptions } from "firebase-functions";
-import * as logger from "firebase-functions/logger";
+import { setGlobalOptions } from "firebase-functions"
+import * as logger from "firebase-functions/logger"
 import * as functionsV1 from "firebase-functions/v1"
-import { initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { onDocumentUpdated } from "firebase-functions/v2/firestore"
+import { initializeApp } from "firebase-admin/app"
+import { getFirestore } from "firebase-admin/firestore"
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -26,11 +27,11 @@ import { getFirestore } from "firebase-admin/firestore";
 // functions should each use functions.runWith({ maxInstances: 10 }) instead.
 // In the v1 API, each function can only serve one request per container, so
 // this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({ maxInstances: 10 })
 
-initializeApp();
+initializeApp()
 
-const db = getFirestore();
+const db = getFirestore()
 
 export const onNewUserSignIn = functionsV1.auth.user().onCreate(async (user) => {
     const userInfo = {
@@ -39,9 +40,20 @@ export const onNewUserSignIn = functionsV1.auth.user().onCreate(async (user) => 
         email: user.email,
         displayName: user.displayName,
         youtubeUses: 0
-    };
+    }
 
-    await db.collection("users").doc(user.uid).set(userInfo);
-    logger.info("User created", { uid: user.uid });
-    return;
-});
+    await db.collection("users").doc(user.uid).set(userInfo)
+    logger.info("User created", { uid: user.uid })
+    return
+})
+
+export const generateAudioFingerprint = onDocumentUpdated("audio_files/{audio_id}", (event) => {
+    const audio_id = event.params.audio_id
+    const beforeValue = event.data?.before.data()
+    const updatedValue = event.data?.after.data()
+    if (updatedValue && beforeValue && updatedValue.usingNoiseReduced != null && updatedValue.usingNoiseReduced !== beforeValue.usingNoiseReduced) {
+        // return db.collection("audio_files").doc(audio_id).update({ usingNoiseReduced: "test trigger" })
+        // TODO call a cloud run function that generates the audio fingerprint through cloud task
+    }
+    return null
+})
