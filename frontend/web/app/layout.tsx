@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import Navbar from "./navbar/navbar";
 import { AuthProvider } from "./context/auth-context";
+
+const montserrat = Montserrat({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Home | LUCID",
@@ -18,12 +21,12 @@ export default function RootLayout({
       lang="en"
       className={`h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className={`${montserrat.className} min-h-full flex flex-col h-dvh`}>
         <AuthProvider>
           <Navbar />
-          <div>
-            {children}
-          </div>
+          {/* <div className="h-[calc(100dvh-4rem)]"> */}
+          {children}
+          {/* </div> */}
         </AuthProvider>
       </body>
     </html>

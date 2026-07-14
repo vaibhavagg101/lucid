@@ -2,7 +2,7 @@
 
 import { noiseReduce, NoiseReduceRequest, NoiseReduceResponse } from '@/app/actions/noisereduce';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { formatTime, NewAudioContext } from './page';
+import { formatTime, NewAudioContext } from './new-audio-context';
 import { useAuth } from '@/app/context/auth-context';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, updateNR } from '@/app/google-firebase/firestore';

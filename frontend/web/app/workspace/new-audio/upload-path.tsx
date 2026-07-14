@@ -4,7 +4,7 @@ import { useContext, useRef, useState } from "react";
 import { useAuth } from "@/app/context/auth-context";
 import { generateAudioDocumentId, createAudioFileDocument } from '../../google-firebase/firestore';
 import { uploadAudioFile } from '../../google-firebase/storage';
-import { NewAudioContext } from "./page";
+import { NewAudioContext } from "./new-audio-context";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const ALLOWED_TYPES = [

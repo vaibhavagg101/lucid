@@ -3,7 +3,7 @@ import json
 from pydantic import BaseModel
 import demucs.separate
 
-app = FastAPI(title="Noisereduce API - Google Cloud Run")
+app = FastAPI(title="Stem MIDI Key - Google Cloud Run")
 
 # Initialize Firebase Admin
 if not firebase_admin._apps:

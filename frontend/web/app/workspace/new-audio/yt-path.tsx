@@ -1,7 +1,7 @@
 'use client'
 
 import { useContext, useState } from "react"
-import { NewAudioContext } from "./page"
+import { NewAudioContext } from "./new-audio-context"
 import { useAuth } from "@/app/context/auth-context"
 import { useRef } from "react"
 import { processYoutubeURL } from "@/app/actions/youtube"

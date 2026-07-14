@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useContext, createContext, useEffect, useCallback } from 'react';
+import { useState, useRef, useContext, useEffect, useCallback } from 'react';
+import { NewAudioContext, formatTime } from './new-audio-context';
 import { useAuth } from '../../context/auth-context';
 import { useRouter } from 'next/navigation';
 import RecordPath from './record-path'
@@ -11,41 +12,6 @@ import StartAudioProcessing from './start-audio-processing';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 
-interface NewAudioContextType {
-    originalAudioId: string | null;
-    changeOriginalAudioId: (path: string) => void;
-    fileExt: string | null;
-    changeFileExt: (fileExt: string | null) => void;
-    fileType: string | null;
-    changeFileType: (fileType: string | null) => void;
-    originalAudioBlob: Blob | null,
-    changeOriginalAudioBlob: (file: Blob) => void;
-    error: string | null;
-    changeError: (message: string | null) => void;
-    currentPath: string;
-    changeCurrentPath: (path: string) => void;
-}
-
-export const NewAudioContext = createContext<NewAudioContextType>({
-    originalAudioId: null,
-    changeOriginalAudioId: (path: string) => { },
-    fileExt: null,
-    changeFileExt: (fileExt: string | null) => { },
-    fileType: null,
-    changeFileType: (fileType: string | null) => { },
-    originalAudioBlob: null,
-    changeOriginalAudioBlob: (file: Blob) => { },
-    error: null,
-    changeError: (message: string | null) => { },
-    currentPath: "Home",
-    changeCurrentPath: (path: string) => { },
-});
-
-export const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-};
 
 export default function NewAudio() {
     // Auth context 
@@ -190,8 +156,8 @@ export default function NewAudio() {
             currentPath,
             changeCurrentPath: setCurrentPath,
         }}>
-            <div className="main">
-                <div>
+            <div className="main flex flex-col items-center justify-center min-w-dvw h-full bg-background overflow-y-auto">
+                <div className="textcenter">
                     {loading ? 'Loading...' : user ? null : 'Please log in.'}
                 </div>
 
@@ -216,56 +182,48 @@ export default function NewAudio() {
                 )}
 
                 {user &&
-                    <div>
+                    <div className='w-11/12 flex-1 flex flex-col'>
                         {(() => {
                             switch (currentPath) {
                                 case "Home":
                                     return (
-                                        <div className='user-input-form flex gap-6'>
-                                            <button
-                                                onClick={() => {
-                                                    setCurrentPath("UploadPath")
-                                                }}
-                                                className='btn-primary px-4 py-2 rounded'
-                                            >
-                                                Upload Audio File from Device
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setCurrentPath("RecordPath")
-                                                }}
-                                                className='btn-primary px-4 py-2 rounded'>
-                                                Record Audio
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setCurrentPath("YtPath")
-                                                }}
-                                                className='btn-primary px-4 py-2 rounded'>
-                                                Download Audio using YouTube Link
-                                            </button>
-
-                                            {/* TEMPORARY TEST BUTTON */}
-                                            {/* <input
-                                                type="file"
-                                                accept="audio/*"
-                                                className="hidden"
-                                                id="test-local-file-input"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        setOriginalAudioBlob(file);
-                                                        setOriginalAudioId("mock-test-id-123");
-                                                        setCurrentPath("PreviewNoiseReduce");
-                                                    }
-                                                }}
-                                            />
-                                            <button
-                                                onClick={() => document.getElementById('test-local-file-input')?.click()}
-                                                className="bg-error text-white px-4 py-2 rounded shadow-md hover:bg-red-600 transition-colors"
-                                            >
-                                                [Test] Load Local Audio
-                                            </button> */}
+                                        <div className='flex flex-col items-center justify-center w-full flex-1 gap-8 py-8 px-2'>
+                                            <div className='text-center'>
+                                                <h1 className='text-3xl font-bold text-on-surface'>How would you like to add new audio?</h1>
+                                                <p className='text-on-surface-variant mt-2 text-sm'>Choose a method below to get started</p>
+                                            </div>
+                                            <div className='flex flex-col flex-1 sm:flex-row gap-4 sm:gap-6 w-full h-1/2'>
+                                                <button
+                                                    onClick={() => setCurrentPath("UploadPath")}
+                                                    className="flex-1 min-h-35 h-2/3 flex flex-col items-center justify-center gap-3 rounded-2xl glassmorphism-surface shadow-md hover:shadow-xl hover:-translate-y-1 transition-all p-6 cursor-pointer"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                                    </svg>
+                                                    <span className='font-semibold text-on-surface text-lg'>Upload File</span>
+                                                    <span className='text-sm text-on-surface-variant text-center'>Choose an audio file from your device</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => setCurrentPath("RecordPath")}
+                                                    className="flex-1 min-h-35 h-2/3 flex flex-col items-center justify-center gap-3 rounded-2xl glassmorphism-surface shadow-md hover:shadow-xl hover:-translate-y-1 transition-all p-6 cursor-pointer"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                                                    </svg>
+                                                    <span className='font-semibold text-on-surface text-lg'>Record Audio</span>
+                                                    <span className='text-sm text-on-surface-variant text-center'>Record directly from your microphone</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => setCurrentPath("YtPath")}
+                                                    className="flex-1 min-h-35 h-2/3 flex flex-col items-center justify-center gap-3 rounded-2xl glassmorphism-surface shadow-md hover:shadow-xl hover:-translate-y-1 transition-all p-6 cursor-pointer"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                                                    </svg>
+                                                    <span className='font-semibold text-on-surface text-lg'>YouTube Link</span>
+                                                    <span className='text-sm text-on-surface-variant text-center'>Download audio from a YouTube URL</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     );
                                 case "RecordPath":

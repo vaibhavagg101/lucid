@@ -4,7 +4,7 @@ import { useContext, useState, useRef, useEffect } from "react";
 import { useAuth } from "@/app/context/auth-context";
 import { generateAudioDocumentId, createAudioFileDocument } from '../../google-firebase/firestore';
 import { uploadAudioFile } from '../../google-firebase/storage';
-import { NewAudioContext } from "./page";
+import { NewAudioContext } from "./new-audio-context";
 import WaveSurfer from 'wavesurfer.js';
 
 export default function RecordPath() {
