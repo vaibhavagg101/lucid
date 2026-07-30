@@ -212,30 +212,42 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
     }, [ogPlot, nrPlot])
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col items-center gap-4 mt-5 pb-6">
             {optedForNoiseReduce
                 ? (
                     <>
-                        {!nrBlob && <div className="flex gap-4">
-                            <button onClick={() => { handleSelectClip(); setNoiseClip(true); }} className='btn-primary px-4 py-2 rounded'>
-                                Select Noise Clip
-                            </button>
+                        {!nrBlob && (
+                            <div className="flex flex-col items-center gap-3">
+                                <button onClick={() => { handleSelectClip(); setNoiseClip(true); }} className="min-w-[220px] rounded-xl bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary-variant cursor-pointer transition-colors">
+                                    Select Noise Clip
+                                </button>
 
-                            {clipStartMs !== null && clipEndMs !== null && noiseClip && (
-                                <span className="text-sm font-semibold text-on-surface self-center">
-                                    Selected: {clipStartMs}ms - {clipEndMs}ms
-                                </span>
-                            )}
-                        </div>}
+                                {clipStartMs !== null && clipEndMs !== null && noiseClip && (
+                                    <span className="text-sm font-medium text-on-surface-variant text-center">
+                                        Selected: {clipStartMs}ms - {clipEndMs}ms
+                                    </span>
+                                )}
+                            </div>)}
 
                         {noiseClip ?
-                            <div className="flex gap-4">
-                                <button onClick={callNoiseReduce} className='btn-primary px-4 py-2 rounded'>Confirm Selection</button>
-                                <button onClick={() => setNoiseClip(false)} className='btn-primary px-4 py-2 rounded bg-opacity-50'>Cancel</button>
+                            <div className="flex items-center justify-center gap-3">
+                                <button
+                                    onClick={callNoiseReduce}
+                                    className="min-w-[220px] rounded-xl bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary-variant cursor-pointer transition-colors"
+                                >
+                                    Confirm Selection
+                                </button>
+
+                                <button
+                                    onClick={() => setNoiseClip(false)}
+                                    className="min-w-[220px] rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-surface-variant cursor-pointer transition-colors"
+                                >
+                                    Cancel
+                                </button>
                             </div>
                             :
                             null}
-                        {!noiseClip && !nrBlob && <button onClick={callNoiseReduce} className='btn-primary px-4 py-2 rounded w-fit'>Start Noise Reduction without Clip</button>}
+                        {!noiseClip && !nrBlob && <button onClick={callNoiseReduce} className="min-w-[220px] rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">Start Noise Reduction without Clip</button>}
 
                         {loadingNr && <div className="text-on-surface mt-4">Processing audio and generating plots...</div>}
 
@@ -274,23 +286,27 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                     </>
                 )
                 : (
-                    <div className="flex gap-4">
+                    <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row mt-6">
                         <button
                             onClick={() => {
                                 setOptedForNoiseReduce(true)
                             }}
-                            className='btn-primary px-4 py-2 rounded'>
+                            className="w-full rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary transition-colors hover:bg-primary-variant cursor-pointer sm:w-auto sm:min-w-[215px]"
+                        >
                             Preview Noise Reduction?
                         </button>
+
                         <button
                             onClick={() => {
                                 pickOG()
                                 changeCurrentPath("StartAudioProcessing")
                             }}
-                            className='btn-primary px-4 py-2 rounded'>
+                            className="w-full rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary transition-colors hover:bg-surface-variant cursor-pointer sm:w-auto sm:min-w-[268px]"
+                        >
                             Continue without Noise Reduction
                         </button>
                     </div>
+
                 )
             }
         </div>

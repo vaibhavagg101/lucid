@@ -165,6 +165,7 @@ export default function UploadPath() {
     };
 
     return (
+<<<<<<< HEAD
         <>
             <div style={{ marginTop: '20px' }}>
                 <input
@@ -184,21 +185,84 @@ export default function UploadPath() {
                 >
                     {uploading ? 'Uploading...' : 'Upload Audio File'}
                 </button>
+=======
+        <div className="w-full px-4 py-6 md:px-8 md:py-8 lg:px-12 lg:py-10">
+            <div className="mx-auto w-full max-w-[1600px] rounded-[32px] border border-outline/30 bg-surface p-4 md:p-8 lg:p-12">
+                <div className="flex min-h-[440px] w-full flex-col items-center justify-center rounded-[28px] bg-background px-4 py-10 shadow-sm md:px-8">
+>>>>>>> niharfrontend
 
-                {progress > 0 && (
-                    <div className="mt-2.5 max-w-1/2">
-                        <div className="w-full bg-surface-variant rounded overflow-hidden">
-                            <div
-                                className="h-2.5 bg-secondary transition-[width] duration-200 ease-in-out"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                        <div className="text-xs mt-1 text-on-surface-variant">
-                            {Math.round(progress)}%
-                        </div>
+                    <div className="text-center">
+                        <h1 className="text-2xl font-bold text-on-surface md:text-3xl">
+                            Upload Audio File
+                        </h1>
+
+                        <p className="mt-2 text-sm text-on-surface-variant md:text-base">
+                            Choose an audio file to begin processing.
+                        </p>
                     </div>
-                )}
+
+                    <div className="mt-8 flex w-full max-w-[500px] flex-col items-center justify-center rounded-3xl border border-outline/30 px-6 py-10 text-center md:px-10">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6 text-primary"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={1.5}
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                                />
+                            </svg>
+                        </div>
+
+                        <h2 className="mt-5 text-xl font-semibold text-on-surface md:text-2xl">
+                            Choose audio file
+                        </h2>
+
+                        <p className="mt-3 text-sm text-on-surface-variant">
+                            Select an audio file from your device
+                        </p>
+
+                        <input
+                            className="hidden"
+                            type="file"
+                            accept=".wav,.mp3,.m4a,.aac,.webm,.ogg,audio/wav,audio/mpeg,audio/mp4,audio/aac,audio/webm,audio/ogg"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                        />
+
+                        <button
+                            onClick={triggerFileInput}
+                            disabled={uploading || originalAudioId !== null}
+                            className={`mt-5 rounded-xl px-6 py-3 text-sm font-medium text-on-primary transition-colors ${uploading || originalAudioId !== null
+                                ? 'bg-primary opacity-80 cursor-not-allowed'
+                                : 'bg-primary hover:bg-primary-variant cursor-pointer'
+                                }`}
+                        >
+                            {uploading ? 'Uploading...' : 'Choose file'}
+                        </button>
+
+                        {progress > 0 && (
+                            <div className="mt-5 w-full max-w-[300px]">
+                                <div className="w-full overflow-hidden rounded-full bg-surface-variant">
+                                    <div
+                                        className="h-2 bg-secondary transition-[width] duration-200 ease-in-out"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+
+                                <p className="mt-2 text-xs text-on-surface-variant">
+                                    {Math.round(progress)}%
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-        </>
+        </div>
     )
 }

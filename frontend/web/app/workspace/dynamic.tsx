@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/auth-context';
 import { filterAudioFilesByUser, renameAudioFile } from '../google-firebase/firestore';
 import { useRouter } from 'next/navigation';
+import HeroSection from './components/HeroSection';
+import MainSectionContainer from './components/MainSectionContainer';
+import MainContainer from './components/MainContainer';
+import AudioFilesHistorySection from './components/AudioFilesHistorySection';
+
 
 export default function DynamicWorkspace() {
     const [userAudioFiles, setUserAudioFiles] = useState<any[]>([])
@@ -64,47 +69,22 @@ export default function DynamicWorkspace() {
     }
 
     return (
-        <div className="workspace-container glassmorphism-surface shadow-md mt-5 not-lg:shadow-sm shadow-blue-950 relative z-20 mx-auto grid grid-cols-1 lg:w-8/12 md:w-10/12 min-h-10/12 w-full items-center justify-center gap-y-10">
-            <h1>Welcome to your workspace, {user.displayName}!</h1>
-            <button onClick={() => router.push('/workspace/new-audio')} className="btn btn-primary">
-                Create New Audio
-            </button>
+        <MainSectionContainer>
+            <MainContainer>
 
-            {audioFilesLoading ? (
-                <p>Loading your audio files...</p>
-            ) : error ? (
-                <p>{error}</p>
-            ) : userAudioFiles.length === 0 ? (
-                <p>You have no audio files yet. Start by creating a new one!</p>
-            ) : (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Audio File</th>
-                            <th>File Type</th>
-                            <th>Actions</th>
+                <HeroSection
+                    userName={user.displayName || 'User'}
+                    onCreateAudio={() => router.push('/workspace/new-audio')}
+                />
 
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {userAudioFiles.map((file) => (
-                            <tr key={file.id} onClick={() => console.log(file.id)}>
-                                <td>{file.filename}</td>
-                                <td>{file.filetype}</td>
-                                <td>
-                                    <button onClick={() => renameAudioFileHelper(file.id)}>
-                                        Rename
-                                    </button>
-                                    <button onClick={() => router.push(`/workspace/audio/${file.id}`)}>
-                                        View
-                                    </button>
-
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
+                <AudioFilesHistorySection
+                    files={userAudioFiles}
+                    loading={audioFilesLoading}
+                    error={error}
+                    onRename={renameAudioFileHelper}
+                    onView={(audioId) => router.push(`/workspace/audio/${audioId}`)}
+                />
+            </MainContainer>
+        </MainSectionContainer>
     )
 }
