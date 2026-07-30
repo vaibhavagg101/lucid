@@ -9,25 +9,26 @@ import { NewAudioContext } from "./new-audio-context";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const ALLOWED_TYPES = [
     'audio/wav',
-    'audio/x-wav',
     'audio/mpeg',
     'audio/mp3',
     'audio/mp4',
-    'audio/x-m4a',
     'audio/aac',
     'audio/webm',
     'audio/ogg',
-    'audio/x-ogg',
-    'application/ogg'
+    'audio/flac',
+    'audio/aiff',
 ];
-const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg'];
+const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg', 'flac', 'aiff', 'aif'];
 export const EXTENSION_TO_TYPE_MAP: Record<string, string[]> = {
-    'wav': ['audio/wav', 'audio/x-wav'],
+    'wav': ['audio/wav'],
     'mp3': ['audio/mpeg', 'audio/mp3'],
-    'm4a': ['audio/mp4', 'audio/x-m4a'],
+    'm4a': ['audio/mp4'],
     'aac': ['audio/aac'],
     'webm': ['audio/webm'],
-    'ogg': ['audio/ogg', 'audio/x-ogg', 'application/ogg']
+    'ogg': ['audio/ogg'],
+    'flac': ['audio/flac'],
+    'aiff': ['audio/aiff'],
+    'aif': ['audio/aiff'],
 };
 
 export default function UploadPath() {
@@ -75,7 +76,7 @@ export default function UploadPath() {
 
         const isValidType = ALLOWED_TYPES.includes(resolvedType);
         if (!isValidExtension && !isValidType) {
-            changeError('Invalid file type. Only .wav, .mp3, .m4a/.aac, .webm, and .ogg are allowed.');
+            changeError('Invalid file type. Only .wav, .mp3, .m4a/.aac, .webm, .ogg, .flac, and .aiff/.aif are allowed.');
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
@@ -169,7 +170,7 @@ export default function UploadPath() {
                 <input
                     className="hidden"
                     type="file"
-                    accept=".wav,.mp3,.m4a,.aac,.webm,.ogg,audio/wav,audio/mpeg,audio/mp4,audio/aac,audio/webm,audio/ogg"
+                    accept=".wav,.mp3,.m4a,.aac,.webm,.ogg,.flac,.aiff,.aif,audio/wav,audio/mpeg,audio/mp4,audio/aac,audio/webm,audio/ogg,audio/flac,audio/x-flac,audio/aiff,audio/x-aiff"
                     ref={fileInputRef}
                     onChange={handleFileChange}
                 />

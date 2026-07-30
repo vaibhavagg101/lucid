@@ -21,6 +21,7 @@ export const createAudioFileDocument = async (audioId: string, userId: string, f
     usingNoiseReduced: null,
     noiseReducedFilepath: null,
     separationOption: 0,
+    midiOption: null,
     bpm: null,
     key: null,
     chordProgression: null,

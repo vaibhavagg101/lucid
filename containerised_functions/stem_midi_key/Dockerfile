@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 ENV PYTHONUNBUFFERED=True
 
@@ -8,6 +8,11 @@ RUN apt-get update && apt-get install -y ffmpeg gcc && rm -rf /var/lib/apt/lists
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Pre-download model weights into the image so runtime never hits the network
+ENV HF_HOME=/app/.cache/huggingface
+RUN python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
+RUN python -c "from demucs.pretrained import get_model; get_model('htdemucs_6s')"
 
 COPY app.py .
 
