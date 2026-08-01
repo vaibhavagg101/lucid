@@ -16,7 +16,7 @@ export const createAudioFileDocument = async (audioId: string, userId: string, f
     filename: fileName.split('.').at(0) || fileName,
     filetype: fileName.split('.').pop()?.toLowerCase(),
     userId: userId,
-    filepath: `${userId}/audio/${audioId}`,
+    filepath: `${userId}/audio/${audioId}.${fileName.split('.').pop()?.toLowerCase()}`,
     uploadedAt: new Date(),
     usingNoiseReduced: null,
     noiseReducedFilepath: null,

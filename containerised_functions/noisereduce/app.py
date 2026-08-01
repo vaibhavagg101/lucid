@@ -1,21 +1,22 @@
-import os
+import base64
+import firebase_admin
 import io
-from pydantic import BaseModel
+import json
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import noisereduce as nr
-from fastapi import FastAPI, HTTPException, Security
+import numpy as np
+import os
+import uvicorn
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from firebase_admin import firestore
+from google.cloud import storage
+from pydantic import BaseModel
 from pydub import AudioSegment
 from pydub.effects import normalize
 from typing import Optional
-from google.cloud import storage
-import firebase_admin
-from firebase_admin import credentials, firestore
-import base64
-import json
-import matplotlib
-import numpy as np
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
 app = FastAPI(title="Noisereduce API - Google Cloud Run")
 
@@ -28,7 +29,6 @@ db = firestore.client()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
         "https://lucid--lucid-b0b9e.asia-east1.hosted.app",
         "https://lucid.vaibhavaggarwal.dev"
     ],
@@ -37,7 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ALLOWED_EXTENSIONS = {'wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg'}
+ALLOWED_EXTENSIONS = {'wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg', 'flac', 'aiff', 'aif'}
 
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
@@ -78,7 +78,6 @@ class NoiseReduceRequest(BaseModel):
     startPoint: Optional[int] = None
     endPoint: Optional[int] = None
 
-@app.post('/noisereduce')
 def process_audio(request: NoiseReduceRequest):
     gsBucket = request.gsBucket
     filepath = request.filepath
@@ -178,11 +177,14 @@ def process_audio(request: NoiseReduceRequest):
         cleaned_audio = normalize(cleaned_audio)
 
         out_buffer = io.BytesIO()
+        export_format = file_ext
+        if file_ext == 'm4a':
+            export_format = 'ipod' # pydub maps m4a to the ipod ffmpeg format
         if cleaned_audio.sample_width == 4 and file_ext == 'wav':
             # Export 32-bit audio as 32-bit float (pcm_f32le) instead of 32-bit INT default
-            cleaned_audio.export(out_buffer, format=file_ext, parameters=["-acodec", "pcm_f32le"])
+            cleaned_audio.export(out_buffer, format=export_format, parameters=["-acodec", "pcm_f32le"])
         else:
-            cleaned_audio.export(out_buffer, format=file_ext)
+            cleaned_audio.export(out_buffer, format=export_format)
         out_buffer.seek(0)
         
         # Upload files to GCS
@@ -267,6 +269,5 @@ def process_audio_pubsub(pubsub_message: PubSubMessage):
     return {"status": "processed"}
 
 if __name__ == '__main__':
-    import uvicorn
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host='0.0.0.0', port=port)

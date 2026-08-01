@@ -13,6 +13,8 @@ import * as functionsV1 from "firebase-functions/v1"
 import { onDocumentUpdated } from "firebase-functions/v2/firestore"
 import { initializeApp } from "firebase-admin/app"
 import { getFirestore } from "firebase-admin/firestore"
+import { PubSub } from "@google-cloud/pubsub"
+import { defineString } from "firebase-functions/params" // <-- Add this import
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -33,6 +35,10 @@ initializeApp()
 
 const db = getFirestore()
 
+const pubsub = new PubSub();
+const bg_processing_pubsub_topic = defineString('BG_PROCESSING_PUBSUB_TOPIC');
+const bucket_name = defineString('GSBUCKET');
+
 export const onNewUserSignIn = functionsV1.auth.user().onCreate(async (user) => {
     const userInfo = {
         uid: user.uid,
@@ -47,13 +53,23 @@ export const onNewUserSignIn = functionsV1.auth.user().onCreate(async (user) => 
     return
 })
 
-export const generateAudioFingerprint = onDocumentUpdated("audio_files/{audio_id}", (event) => {
-    const audio_id = event.params.audio_id
+export const backgroundAudioProcessing = onDocumentUpdated("audio_files/{audio_id}", (event) => {
     const beforeValue = event.data?.before.data()
     const updatedValue = event.data?.after.data()
-    if (updatedValue && beforeValue && updatedValue.usingNoiseReduced != null && updatedValue.usingNoiseReduced !== beforeValue.usingNoiseReduced) {
-        // return db.collection("audio_files").doc(audio_id).update({ usingNoiseReduced: "test trigger" })
-        // TODO call a cloud run function that generates the audio fingerprint through cloud task
+    if (updatedValue && 
+        beforeValue && 
+        updatedValue.usingNoiseReduced != null && 
+        updatedValue.usingNoiseReduced !== beforeValue.usingNoiseReduced) {
+        const payload = {
+            audio_id: updatedValue.id,
+            usingNoiseReduced: updatedValue.usingNoiseReduced,
+            filepath: updatedValue.filepath,
+            filetype: updatedValue.filetype,
+            gsBucket: bucket_name.value()
+        }
+
+        const dataBuffer = Buffer.from(JSON.stringify(payload));
+        pubsub.topic(bg_processing_pubsub_topic.value()).publishMessage({ data: dataBuffer });
     }
     return null
 })

@@ -7,29 +7,21 @@ import { uploadAudioFile } from '../../google-firebase/storage';
 import { NewAudioContext } from "./new-audio-context";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
-const ALLOWED_TYPES = [
-    'audio/wav',
-    'audio/mpeg',
-    'audio/mp3',
-    'audio/mp4',
-    'audio/aac',
-    'audio/webm',
-    'audio/ogg',
-    'audio/flac',
-    'audio/aiff',
-];
-const ALLOWED_EXTENSIONS = ['wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg', 'flac', 'aiff', 'aif'];
+const MAX_DURATION = 6.5 * 60; // 6.5 minutes in seconds
+
 export const EXTENSION_TO_TYPE_MAP: Record<string, string[]> = {
-    'wav': ['audio/wav'],
-    'mp3': ['audio/mpeg', 'audio/mp3'],
-    'm4a': ['audio/mp4'],
-    'aac': ['audio/aac'],
+    'wav': ['audio/wav', 'audio/x-wav', 'audio/wave', 'audio/vnd.wave'],
+    'mp3': ['audio/mpeg', 'audio/mp3', 'audio/mpeg3', 'audio/x-mpeg-3'],
+    'm4a': ['audio/mp4', 'audio/x-m4a', 'audio/m4a'],
+    'aac': ['audio/aac', 'audio/x-aac', 'audio/aacp'],
     'webm': ['audio/webm'],
-    'ogg': ['audio/ogg'],
-    'flac': ['audio/flac'],
-    'aiff': ['audio/aiff'],
-    'aif': ['audio/aiff'],
+    'ogg': ['audio/ogg', 'application/ogg', 'audio/x-ogg'],
+    'flac': ['audio/flac', 'audio/x-flac'],
+    'aiff': ['audio/aiff', 'audio/x-aiff'],
+    'aif': ['audio/aiff', 'audio/x-aiff'],
 };
+const ALLOWED_EXTENSIONS = Object.keys(EXTENSION_TO_TYPE_MAP);
+const ALLOWED_TYPES = Array.from(new Set(Object.values(EXTENSION_TO_TYPE_MAP).flat()));
 
 export default function UploadPath() {
     const { user, loading } = useAuth()
@@ -165,31 +157,9 @@ export default function UploadPath() {
     };
 
     return (
-<<<<<<< HEAD
-        <>
-            <div style={{ marginTop: '20px' }}>
-                <input
-                    className="hidden"
-                    type="file"
-                    accept=".wav,.mp3,.m4a,.aac,.webm,.ogg,.flac,.aiff,.aif,audio/wav,audio/mpeg,audio/mp4,audio/aac,audio/webm,audio/ogg,audio/flac,audio/x-flac,audio/aiff,audio/x-aiff"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                />
-                <button
-                    onClick={triggerFileInput}
-                    disabled={uploading || originalAudioId !== null}
-                    className={`px-4 py-2 rounded border-none text-on-primary transition-colors ${uploading || originalAudioId !== null
-                        ? 'bg-primary opacity-80 cursor-not-allowed'
-                        : 'bg-primary hover:bg-primary-variant cursor-pointer'
-                        }`}
-                >
-                    {uploading ? 'Uploading...' : 'Upload Audio File'}
-                </button>
-=======
         <div className="w-full px-4 py-6 md:px-8 md:py-8 lg:px-12 lg:py-10">
             <div className="mx-auto w-full max-w-[1600px] rounded-[32px] border border-outline/30 bg-surface p-4 md:p-8 lg:p-12">
                 <div className="flex min-h-[440px] w-full flex-col items-center justify-center rounded-[28px] bg-background px-4 py-10 shadow-sm md:px-8">
->>>>>>> niharfrontend
 
                     <div className="text-center">
                         <h1 className="text-2xl font-bold text-on-surface md:text-3xl">

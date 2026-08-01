@@ -1,0 +1,10 @@
+audioop-lts
+fastapi
+firebase-admin
+google-cloud-storage
+matplotlib
+numpy
+pydantic
+pydub
+scipy
+uvicorn

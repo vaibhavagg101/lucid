@@ -1,0 +1,5 @@
+gcloud auth configure-docker asia-south2-docker.pkg.dev
+sudo usermod -aG docker $USER
+newgrp docker
+docker build -t asia-south2-docker.pkg.dev/lucid-b0b9e/containerised-functions-cloud-run/audio-fingerprint:v1 .
+docker push asia-south2-docker.pkg.dev/lucid-b0b9e/containerised-functions-cloud-run/audio-fingerprint:v1

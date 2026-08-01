@@ -86,7 +86,6 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                 return;
             }
             try {
-
                 const request: NoiseReduceRequest = {
                     token,
                     gsBucket,
