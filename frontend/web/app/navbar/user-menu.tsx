@@ -114,7 +114,7 @@ export default function UserMenu() {
             aria-expanded={desktopOpen}
           >
             <Avatar user={user} sizeClass="w-9 h-9" />
-            <span className="max-w-[12rem] truncate">{displayName}</span>
+            <span className="max-w-48 truncate">{displayName}</span>
             <svg
               className={`w-4 h-4 transition-transform ${desktopOpen ? 'rotate-180' : ''}`}
               fill="none"
@@ -128,7 +128,7 @@ export default function UserMenu() {
           {/* Pop Up Menu Desktop */}
           {desktopOpen && (
             <div
-              className="flex glassmorphism-primary text-on-primary absolute w-[14rem] rounded-b-2xl text-center justify-center shadow-lg py-2 z-50"
+              className="flex glassmorphism-primary text-on-primary absolute w-full rounded-b-2xl text-center justify-center shadow-lg py-2 z-50"
               role="menu"
             >
               <button
@@ -142,7 +142,7 @@ export default function UserMenu() {
           )}
         </div>
       </div>
-      
+
       {/* Mobile Menu */}
       <div className="md:hidden">
         <button

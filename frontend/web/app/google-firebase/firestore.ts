@@ -24,7 +24,6 @@ export const createAudioFileDocument = async (audioId: string, userId: string, f
     midiOption: null,
     bpm: null,
     key: null,
-    chordProgression: null,
   });
 
   return audioId;

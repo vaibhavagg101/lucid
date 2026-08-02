@@ -52,6 +52,10 @@ def process_chords(audio_path):
     df.to_csv(csv_path, index=False)
     print(f"Saved chords to {csv_path}")
 
+    import key_detection as kd
+    detected_key = kd.detect_key_from_chords(csv_path)
+    print(f"Detected key: {detected_key}")
+    
     return df
 
 def test_on_lucid_directory():

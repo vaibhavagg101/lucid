@@ -11,5 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ISMIR2019-Large-Vocabulary-Chord-Recognition/ ISMIR2019-Large-Vocabulary-Chord-Recognition/
 COPY app.py .
+COPY key_detection.py .
 
 CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8080}"]

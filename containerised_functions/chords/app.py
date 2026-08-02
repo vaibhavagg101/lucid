@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import uvicorn
 import pandas as pd
+import key_detection as kd
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -136,7 +137,14 @@ def process_pubsub(envelope: dict):
                 print(f"Error parsing dataframe/saving csv: {e}")
                 raise HTTPException(status_code=500, detail="Failed to parse chords lab file")
 
-            # 4. Upload resulting CSV to GCS
+            # Key detection from chords
+            try:
+                detected_key = kd.detect_key_from_chords(local_csv_path)
+            except Exception as e:
+                print(f"Error detecting key from chords: {e}")
+                detected_key = "Unknown"
+
+            # Upload resulting CSV to GCS
             filename_csv = f"{filename.rsplit('.', 1)[0]}_chords.csv"
             with open(local_csv_path, "rb") as csv_file_buffer:
                 gsBucket_path = uploadFileToGCS(
@@ -147,11 +155,12 @@ def process_pubsub(envelope: dict):
                     filetype="text/csv"
                 )
 
-            # 6. Update Firestore document
+            # Update Firestore document
             try:
                 doc_ref = db.collection('audio_files').document(audio_id)
                 doc_ref.update({
-                    'chords_csv_filepath': gsBucket_path
+                    'chords_csv_filepath': gsBucket_path,
+                    'key': detected_key
                 })
             except Exception as e:
                 print(f"Error saving chords metadata to Firestore: {e}")
