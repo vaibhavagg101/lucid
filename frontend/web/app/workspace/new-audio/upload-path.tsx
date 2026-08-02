@@ -1,8 +1,9 @@
 'use client'
 
 import { useContext, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/auth-context";
-import { generateAudioDocumentId, createAudioFileDocument } from '../../google-firebase/firestore';
+import { generateAudioDocumentId, createAudioFileDocument, waitForAudioValidation } from '../../google-firebase/firestore';
 import { uploadAudioFile } from '../../google-firebase/storage';
 import { NewAudioContext } from "./new-audio-context";
 
@@ -24,10 +25,12 @@ const ALLOWED_EXTENSIONS = Object.keys(EXTENSION_TO_TYPE_MAP);
 const ALLOWED_TYPES = Array.from(new Set(Object.values(EXTENSION_TO_TYPE_MAP).flat()));
 
 export default function UploadPath() {
+    const router = useRouter();
     const { user, loading } = useAuth()
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [validatingFile, setValidatingFile] = useState(false);
 
     const { originalAudioId,
         changeOriginalAudioId,
@@ -121,6 +124,24 @@ export default function UploadPath() {
                         // Create Firestore doc
                         await createAudioFileDocument(audioId, user.uid, file.name);
 
+                        setValidatingFile(true)
+                        const isValidated = await waitForAudioValidation(audioId);
+
+                        if (!isValidated) {
+                            changeError("File validation failed: File must be under 50MB and 6.5 minutes.");
+                            setUploading(false);
+                            if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                            }
+
+                            setValidatingFile(false)
+                            setTimeout(() => {
+                                router.push('/workspace');
+                            }, 5000);
+                            return;
+                        }
+
+                        setValidatingFile(false)
                         changeOriginalAudioId(audioId);
                         changeFileExt(fileExtension);
                         changeFileType(resolvedType);
@@ -169,6 +190,10 @@ export default function UploadPath() {
                         <p className="mt-2 text-sm text-on-surface-variant md:text-base">
                             Choose an audio file to begin processing.
                         </p>
+
+                        <p className="mt-2 text-sm text-on-surface-variant md:text-base">
+                            Make sure the file is under 50MB and less than 6.5 minutes long to pass validation.
+                        </p>
                     </div>
 
                     <div className="mt-8 flex w-full max-w-[500px] flex-col items-center justify-center rounded-3xl border border-outline/30 px-6 py-10 text-center md:px-10">
@@ -207,13 +232,13 @@ export default function UploadPath() {
 
                         <button
                             onClick={triggerFileInput}
-                            disabled={uploading || originalAudioId !== null}
-                            className={`mt-5 rounded-xl px-6 py-3 text-sm font-medium text-on-primary transition-colors ${uploading || originalAudioId !== null
+                            disabled={uploading || validatingFile || originalAudioId !== null}
+                            className={`mt-5 rounded-xl px-6 py-3 text-sm font-medium text-on-primary transition-colors ${uploading || validatingFile || originalAudioId !== null
                                 ? 'bg-primary opacity-80 cursor-not-allowed'
                                 : 'bg-primary hover:bg-primary-variant cursor-pointer'
                                 }`}
                         >
-                            {uploading ? 'Uploading...' : 'Choose file'}
+                            {validatingFile ? 'Validating...' : uploading ? 'Uploading...' : 'Choose file'}
                         </button>
 
                         {progress > 0 && (

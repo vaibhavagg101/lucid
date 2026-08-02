@@ -10,11 +10,13 @@
 import { setGlobalOptions } from "firebase-functions"
 import * as logger from "firebase-functions/logger"
 import * as functionsV1 from "firebase-functions/v1"
-import { onDocumentUpdated } from "firebase-functions/v2/firestore"
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore"
 import { initializeApp } from "firebase-admin/app"
 import { getFirestore } from "firebase-admin/firestore"
 import { PubSub } from "@google-cloud/pubsub"
 import { defineString } from "firebase-functions/params" // <-- Add this import
+import { getStorage } from "firebase-admin/storage"
+import * as mm from "music-metadata"
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -56,9 +58,9 @@ export const onNewUserSignIn = functionsV1.auth.user().onCreate(async (user) => 
 export const backgroundAudioProcessing = onDocumentUpdated("audio_files/{audio_id}", (event) => {
     const beforeValue = event.data?.before.data()
     const updatedValue = event.data?.after.data()
-    if (updatedValue && 
-        beforeValue && 
-        updatedValue.usingNoiseReduced != null && 
+    if (updatedValue &&
+        beforeValue &&
+        updatedValue.usingNoiseReduced != null &&
         updatedValue.usingNoiseReduced !== beforeValue.usingNoiseReduced) {
         const payload = {
             audio_id: updatedValue.id,
@@ -72,4 +74,74 @@ export const backgroundAudioProcessing = onDocumentUpdated("audio_files/{audio_i
         pubsub.topic(bg_processing_pubsub_topic.value()).publishMessage({ data: dataBuffer });
     }
     return null
+})
+
+
+export const validateAudioFile = onDocumentCreated("audio_files/{audio_id}", async (event) => {
+    if (!event.data) {
+        logger.error("No event data found in the event", { event })
+        return
+    }
+
+    const object = event.data.data()
+    if (!object) {
+        logger.error("No object data found in the event", { event })
+        return
+    }
+
+    const filePath = object.filepath || ""
+    const gsBucket = bucket_name.value()
+    const docRef = event.data.ref
+
+    try {
+        const bucket = getStorage().bucket(gsBucket)
+        const file = bucket.file(filePath)
+
+        const [exists] = await file.exists()
+        if (!exists) {
+            logger.error("File does not exist in bucket", { filePath })
+            await docRef.update({ validated: false })
+            return
+        }
+
+        const [metadata] = await file.getMetadata()
+        const sizeBytes = Number(metadata.size) || 0
+        const FIFTY_MB = 50 * 1024 * 1024
+
+        if (sizeBytes > FIFTY_MB) {
+            logger.warn("File size exceeds 50MB", { sizeBytes })
+            await file.delete().catch(err => logger.error("File deletion failed", { err }))
+            await docRef.update({ validated: false })
+            return
+        }
+
+        const readStream = file.createReadStream()
+        let durationSeconds = 0
+        try {
+            const audioMetadata = await mm.parseStream(readStream, metadata.contentType, { duration: true, skipCovers: true })
+            durationSeconds = audioMetadata.format.duration || 0
+        } finally {
+            readStream.destroy()
+        }
+
+        const SIX_AND_HALF_MINUTES = 6.5 * 60
+
+        if (durationSeconds > SIX_AND_HALF_MINUTES) {
+            logger.warn("File duration exceeds 6.5 minutes", { durationSeconds })
+            await file.delete().catch(err => logger.error("File deletion failed", { err }))
+            await docRef.update({ validated: false })
+            return
+        }
+
+        await docRef.update({ validated: true })
+    } catch (error) {
+        logger.error("Error validating audio", { error, object })
+        try {
+            const bucket = getStorage().bucket(gsBucket)
+            await bucket.file(filePath).delete().catch(() => { })
+        } catch (e) {
+            logger.error("Error falling back to file deletion", { e })
+        }
+        await docRef.update({ validated: false })
+    }
 })

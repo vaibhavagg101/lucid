@@ -1,4 +1,4 @@
-import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc, onSnapshot } from 'firebase/firestore';
 import { app } from './authentication';
 
 export const db = getFirestore(app);
@@ -84,14 +84,17 @@ export async function updateNR(pickedNR: boolean, userId: string, audioId: strin
     throw new Error('Unauthorized');
   }
 
+  const originalFilepath = audioDoc.data().filepath;
+
   try {
     if (pickedNR) {
       if (!filepath) {
         throw new Error("Filepath not provided.")
       }
       await updateDoc(audioDocRef, {
-        noiseReducedFilepath: filepath,
-        usingNoiseReduced: true
+        filepath: filepath,
+        usingNoiseReduced: true,
+        originalFilepath: originalFilepath
       })
     }
     else {
@@ -104,3 +107,26 @@ export async function updateNR(pickedNR: boolean, userId: string, audioId: strin
     throw new Error("Failed to update database")
   }
 }
+export const waitForAudioValidation = (audioId: string): Promise<boolean> => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = onSnapshot(
+      doc(db, 'audio_files', audioId),
+      (docSnap) => {
+        if (!docSnap.exists()) {
+          unsubscribe();
+          reject(new Error("Document does not exist"));
+          return;
+        }
+        const data = docSnap.data();
+        if (data.validated !== undefined) {
+          unsubscribe();
+          resolve(data.validated);
+        }
+      },
+      (error) => {
+        unsubscribe();
+        reject(error);
+      }
+    );
+  });
+};

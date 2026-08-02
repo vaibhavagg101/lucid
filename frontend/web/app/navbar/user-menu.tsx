@@ -159,7 +159,7 @@ export default function UserMenu() {
 
       {mobileOpen && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-md bg-on-background/30 md:hidden"
+          className="fixed inset-0 z-100 flex items-center justify-center backdrop-blur-md bg-on-background/30 md:hidden"
           onClick={() => setMobileOpen(false)}
           role="dialog"
           aria-modal="true"
