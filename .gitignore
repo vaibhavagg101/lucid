@@ -47,6 +47,7 @@ htmlcov/
 
 # Testing
 Test Audio LUCID/
+ISMIR2019-Large-Vocabulary-Chord-Recognition/
 
 # Editor directories and files
 .vscode/
