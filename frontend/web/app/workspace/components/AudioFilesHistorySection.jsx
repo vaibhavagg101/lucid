@@ -1,13 +1,14 @@
 import FilesContainer from './FilesContainer';
 import EmptyState from './EmptyState';
-
+import { useRouter } from 'next/navigation';
 function AudioFilesHistorySection({
     files,
     loading,
     error,
     onRename,
-    onView,
 }) {
+    const router = useRouter();
+
     return (
         <section className="mt-10 w-full">
             <h2 className="mb-4 text-xl font-semibold text-on-surface">
@@ -36,7 +37,7 @@ function AudioFilesHistorySection({
                         <FilesContainer key={file.id}>
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <p className="break-words text-sm font-medium text-on-surface">
+                                    <p className="wrap-break-word text-sm font-medium text-on-surface">
                                         {file.filename}
                                     </p>
 
@@ -45,9 +46,9 @@ function AudioFilesHistorySection({
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-3 sm:flex-shrink-0">
+                                <div className="flex items-center gap-3 sm:shrink-0">
                                     <button
-                                        onClick={() => onView(file.id)}
+                                        onClick={() => router.push(`/workspace/audio/${file.id}`)}
                                         className="
                                             rounded-lg
                                             border

@@ -9,7 +9,7 @@ import WaveSurfer from 'wavesurfer.js';
 
 export default function RecordPath() {
     const { user, loading } = useAuth()
-    const { originalAudioBlob, changeOriginalAudioId, changeOriginalAudioBlob, changeFileType, changeFileExt, changeError, changeCurrentPath } = useContext(NewAudioContext)
+    const { changeOriginalAudioId, changeOriginalAudioBlob, changeFileType, changeFileExt, changeError, changeCurrentPath } = useContext(NewAudioContext)
 
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
@@ -55,7 +55,7 @@ export default function RecordPath() {
 
             for (let i = 0; i < bufferLength; i++) {
                 barHeight = dataArray[i] / 4; // Scale dynamically for height=64
-                canvasCtx.fillStyle = 'rgb(0, 188, 212)';
+                canvasCtx.fillStyle = 'rgba(0, 188, 212, 0.3)';
                 // Center the bar vertically, minimum 2px height for silence line
                 canvasCtx.fillRect(x, (canvas.height / 2) - (barHeight / 2), barWidth, Math.max(2, barHeight));
                 x += barWidth + 1;
@@ -98,7 +98,6 @@ export default function RecordPath() {
             analyser.fftSize = 256;
             audioContextRef.current = audioCtx;
             analyserRef.current = analyser;
-            drawVisualizer();
 
             // Let browser decide the best format for maximum compatibility (Safari usually prefers mp4, Chrome prefers webm)
             const mediaRecorder = new MediaRecorder(stream);
@@ -160,6 +159,13 @@ export default function RecordPath() {
             changeError("Maximum recording limit of 10 minutes reached.");
         }
     }, [recordingTime, isRecording]);
+
+    // Runs after the canvas/mic-bar elements have mounted, so their refs are attached before drawing starts
+    useEffect(() => {
+        if (isRecording) {
+            drawVisualizer();
+        }
+    }, [isRecording]);
 
     const handleDiscard = () => {
         setAudioBlob(null);
@@ -301,144 +307,144 @@ export default function RecordPath() {
     };
 
     return (
-        <div className="w-full px-4 py-6 md:px-8 md:py-8 lg:px-12 lg:py-10">
-            <div className="mx-auto w-full max-w-[1600px] rounded-[32px] border border-outline/30 bg-surface p-4 md:p-8 lg:p-12">
-                <div className="flex min-h-[440px] w-full flex-col items-center justify-center rounded-[28px] bg-background px-4 py-10 shadow-sm md:px-8">
+        <div className="w-full">
+            <div className="flex min-h-110 w-full flex-col items-center justify-center">
 
-                    <div className="text-center">
-                        <h1 className="text-2xl font-bold text-on-surface md:text-3xl">
-                            Record Audio
-                        </h1>
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-on-surface md:text-3xl">
+                        Record Audio
+                    </h1>
 
-                        <p className="mt-2 text-sm text-on-surface-variant md:text-base">
-                            Record directly from your microphone.
+                    <p className="mt-2 text-sm text-on-surface-variant md:text-base">
+                        Record directly from your microphone.
+                    </p>
+                </div>
+
+                {permissionGranted === false && (
+                    <div className="mb-4 w-full max-w-125 rounded-xl bg-error/10 p-3 text-center text-sm text-error">
+                        Microphone access is required to record audio.
+                    </div>
+                )}
+
+                {uploadingBlob && (
+                    <p className="mb-4 text-sm text-on-surface-variant">
+                        Your file is being uploaded to the cloud...
+                    </p>
+                )}
+
+                {uploadProgress > 0 && (
+                    <div className="mb-6 w-full max-w-125">
+                        <div className="w-full overflow-hidden rounded bg-surface-variant">
+                            <div
+                                className="h-2.5 bg-secondary transition-[width] duration-200 ease-in-out"
+                                style={{ width: `${uploadProgress}%` }}
+                            />
+                        </div>
+
+                        <p className="mt-1 text-xs text-on-surface-variant">
+                            {Math.round(uploadProgress)}%
                         </p>
                     </div>
+                )}
 
-                    {permissionGranted === false && (
-                        <div className="mb-4 w-full max-w-[500px] rounded-xl bg-error/10 p-3 text-center text-sm text-error">
-                            Microphone access is required to record audio.
-                        </div>
-                    )}
+                <div className="mt-8 w-full max-w-125 rounded-3xl border border-outline/30 px-6 py-8 md:px-10">
+                    {!audioBlob ? (
+                        <div className="flex flex-col items-center w-full">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
 
-                    {uploadingBlob && (
-                        <p className="mb-4 text-sm text-on-surface-variant">
-                            Your file is being uploaded to the cloud...
-                        </p>
-                    )}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-6 w-6 text-primary"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={1.5}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
+                                    />
+                                </svg>
 
-                    {uploadProgress > 0 && (
-                        <div className="mb-6 w-full max-w-[500px]">
-                            <div className="w-full overflow-hidden rounded bg-surface-variant">
-                                <div
-                                    className="h-2.5 bg-secondary transition-[width] duration-200 ease-in-out"
-                                    style={{ width: `${uploadProgress}%` }}
-                                />
                             </div>
 
-                            <p className="mt-1 text-xs text-on-surface-variant">
-                                {Math.round(uploadProgress)}%
+                            <div className="mt-5 text-3xl font-semibold text-on-surface">
+                                {formatTime(recordingTime)}
+                            </div>
+
+                            <div className="relative mt-6">
+                                {isRecording && (
+                                    <canvas
+                                        ref={canvasRef}
+                                        height={40}
+                                        className="absolute bottom-full rounded-xl left-1/2 mb-2 h-10 w-4/5 max-w-72 -translate-x-1/2 opacity-80"
+                                    />
+                                )}
+
+                                {isRecording ? (
+                                    <button
+                                        onClick={stopRecording}
+                                        className="rounded-xl bg-error px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 cursor-pointer"
+                                    >
+                                        <span className="mr-2 inline-block h-3 w-3 rounded-sm bg-white"></span>
+                                        Stop Recording
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={startRecording}
+                                        className="rounded-xl bg-primary px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-variant cursor-pointer"
+                                    >
+                                        <span className="mr-2 inline-block h-3 w-3 rounded-full bg-error"></span>
+                                        Start Recording
+                                    </button>
+                                )}
+                            </div>
+
+                            <p className="mt-5 text-sm text-on-surface-variant">
+                                Max Recording Time: 10 minutes
                             </p>
                         </div>
+                    ) : (
+                        <div className="flex flex-col items-center">
+                            <p className="rounded-full bg-surface-variant px-3 py-1 text-sm text-on-surface-variant">
+                                Recording complete ({formatTime(recordingTime)})
+                            </p>
+
+                            <div className="mt-6 w-full">
+                                <div ref={waveformRef} className="w-full"></div>
+
+                                <div className="mt-4 flex justify-center">
+                                    <button
+                                        onClick={handlePlayPause}
+                                        className="rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-white"
+                                    >
+                                        {isPlaying ? 'Pause' : 'Play'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row">
+                                <button
+                                    onClick={handleDiscard}
+                                    disabled={uploadingBlob}
+                                    className="flex-1 rounded-xl border border-error px-4 py-3 text-sm font-medium text-error"
+                                >
+                                    Discard
+                                </button>
+
+                                <button
+                                    onClick={handleConfirm}
+                                    disabled={uploadingBlob}
+                                    className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-variant"
+                                >
+                                    Use Recording
+                                </button>
+                            </div>
+                        </div>
                     )}
-
-                    <div className="mt-8 w-full max-w-[500px] rounded-3xl border border-outline/30 px-6 py-8 md:px-10">
-                        {!audioBlob ? (
-                            <div className="flex flex-col items-center w-full">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-6 w-6 text-primary"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        strokeWidth={1.5}
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
-                                        />
-                                    </svg>
-                                </div>
-
-                                <div className="mt-5 text-3xl font-semibold text-on-surface">
-                                    {formatTime(recordingTime)}
-                                </div>
-
-                                <div className="relative mt-6">
-                                    {isRecording && (
-                                        <canvas
-                                            ref={canvasRef}
-                                            height={40}
-                                            className="absolute bottom-full left-1/2 mb-2 h-10 w-[300px] -translate-x-1/2 opacity-80"
-                                        />
-                                    )}
-
-                                    {isRecording ? (
-                                        <button
-                                            onClick={stopRecording}
-                                            className="rounded-xl bg-error px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700"
-                                        >
-                                            <span className="mr-2 inline-block h-3 w-3 rounded-sm bg-white"></span>
-                                            Stop Recording
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={startRecording}
-                                            className="rounded-xl bg-primary px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-variant"
-                                        >
-                                            <span className="mr-2 inline-block h-3 w-3 rounded-full bg-error"></span>
-                                            Start Recording
-                                        </button>
-                                    )}
-                                </div>
-
-                                <p className="mt-5 text-sm text-on-surface-variant">
-                                    Max Recording Time: 10 minutes
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center">
-                                <p className="rounded-full bg-surface-variant px-3 py-1 text-sm text-on-surface-variant">
-                                    Recording complete ({formatTime(recordingTime)})
-                                </p>
-
-                                <div className="mt-6 w-full">
-                                    <div ref={waveformRef} className="w-full"></div>
-
-                                    <div className="mt-4 flex justify-center">
-                                        <button
-                                            onClick={handlePlayPause}
-                                            className="rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-white"
-                                        >
-                                            {isPlaying ? 'Pause' : 'Play'}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row">
-                                    <button
-                                        onClick={handleDiscard}
-                                        disabled={uploadingBlob}
-                                        className="flex-1 rounded-xl border border-error px-4 py-3 text-sm font-medium text-error"
-                                    >
-                                        Discard
-                                    </button>
-
-                                    <button
-                                        onClick={handleConfirm}
-                                        disabled={uploadingBlob}
-                                        className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-variant"
-                                    >
-                                        Use Recording
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
                 </div>
+
             </div>
         </div>
     )

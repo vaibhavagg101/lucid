@@ -1,6 +1,6 @@
 export default function Home() {
   return (
-    <div className="main flex flex-col items-center w-full h-[calc(100vh-4rem)] overflow-y-auto snap-y snap-mandatory scroll-smooth no-scrollbar" style={{ padding: 0 }}>
+    <div className="main flex flex-col items-center w-full h-[calc(100vh-4rem)] overflow-y-auto not-md:snap-y not-md:snap-mandatory scroll-smooth no-scrollbar" style={{ padding: 0 }}>
 
       {/* Noise-Reduction Section */}
       <section className="relative w-full h-[calc(100vh-4rem)] shrink-0 snap-start snap-always flex flex-col items-center justify-center overflow-hidden">

@@ -3,7 +3,7 @@ function MainContainer({ children }) {
         <div
             className="
                 w-full
-                max-w-[1600px]
+                h-full
                 mx-auto
                 bg-surface
                 rounded-2xl
@@ -11,7 +11,7 @@ function MainContainer({ children }) {
                 py-6
                 sm:px-6
                 sm:py-8
-                md:rounded-[32px]
+                md:rounded-4xl
                 md:px-10
                 md:py-10
                 lg:px-12

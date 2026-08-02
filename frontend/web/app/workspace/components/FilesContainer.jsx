@@ -6,7 +6,8 @@ function FilesContainer({ children }) {
                 rounded-3xl
                 border
                 border-outline/30
-                bg-background
+                glassmorphism-suface
+                shadow-xs
                 px-6
                 py-4
             "

@@ -4,11 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/auth-context';
 import { filterAudioFilesByUser, renameAudioFile } from '../google-firebase/firestore';
 import { useRouter } from 'next/navigation';
-import HeroSection from './components/HeroSection';
 import MainSectionContainer from './components/MainSectionContainer';
 import MainContainer from './components/MainContainer';
 import AudioFilesHistorySection from './components/AudioFilesHistorySection';
-
+import WelcomeSection from './components/WelcomeSection';
 
 export default function DynamicWorkspace() {
     const [userAudioFiles, setUserAudioFiles] = useState<any[]>([])
@@ -72,7 +71,7 @@ export default function DynamicWorkspace() {
         <MainSectionContainer>
             <MainContainer>
 
-                <HeroSection
+                <WelcomeSection
                     userName={user.displayName || 'User'}
                     onCreateAudio={() => router.push('/workspace/new-audio')}
                 />
@@ -82,7 +81,6 @@ export default function DynamicWorkspace() {
                     loading={audioFilesLoading}
                     error={error}
                     onRename={renameAudioFileHelper}
-                    onView={(audioId) => router.push(`/workspace/audio/${audioId}`)}
                 />
             </MainContainer>
         </MainSectionContainer>

@@ -1,4 +1,4 @@
-function HeroSection({ userName, onCreateAudio }) {
+export default function WelcomeSection({ userName, onCreateAudio }) {
     return (
         <div className="w-full flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
@@ -32,5 +32,3 @@ function HeroSection({ userName, onCreateAudio }) {
         </div>
     );
 }
-
-export default HeroSection;
