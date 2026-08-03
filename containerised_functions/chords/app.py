@@ -9,6 +9,7 @@ import tempfile
 import uvicorn
 import pandas as pd
 import key_detection as kd
+import librosa
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,11 +88,11 @@ def process_pubsub(envelope: dict):
         if gsBucket and gsBucket.startswith("gs://"):
             gsBucket = gsBucket[5:]
         filepath = payload.get("filepath")
-        filename = filepath.split('/')[-1]
         
         if not gsBucket or not filepath or not audio_id:
             raise HTTPException(status_code=400, detail="Missing required parameters in message data")
 
+        filename = filepath.split('/')[-1]
         local_audio_path = None
         local_lab_path = None
         local_csv_path = None
@@ -144,6 +145,18 @@ def process_pubsub(envelope: dict):
                 print(f"Error detecting key from chords: {e}")
                 detected_key = "Unknown"
 
+            # BPM estimation
+            try:                
+                # Load with default sr=22050 for faster processing
+                audio, sr = librosa.load(local_audio_path)
+                tempo, _ = librosa.beat.beat_track(y=audio, sr=sr)
+                
+                # In librosa >= 0.10, tempo is a 1D array
+                bpm = float(tempo[0]) if hasattr(tempo, "__len__") else float(tempo)
+            except Exception as e:
+                print(f"Error estimating BPM: {e}")
+                bpm = None
+
             # Upload resulting CSV to GCS
             filename_csv = f"{filename.rsplit('.', 1)[0]}_chords.csv"
             with open(local_csv_path, "rb") as csv_file_buffer:
@@ -160,7 +173,8 @@ def process_pubsub(envelope: dict):
                 doc_ref = db.collection('audio_files').document(audio_id)
                 doc_ref.update({
                     'chords_csv_filepath': gsBucket_path,
-                    'key': detected_key
+                    'key': detected_key,
+                    'bpm': bpm
                 })
             except Exception as e:
                 print(f"Error saving chords metadata to Firestore: {e}")
