@@ -8,3 +8,4 @@ pydantic
 pydub
 audioop-lts
 uvicorn
+google-cloud-storage

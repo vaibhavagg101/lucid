@@ -1,5 +1,7 @@
 import base64
 import json
+import os
+import tempfile
 from pydantic import BaseModel
 from pydub import AudioSegment
 import demucs.separate
@@ -10,12 +12,12 @@ from firebase_admin import firestore
 from google.cloud import storage
 import io
 
-app = FastAPI(title="Stem MIDI Key - Google Cloud Run")
+app = FastAPI(title="Stem API - Google Cloud Run")
 
-# # Initialize Firebase Admin
-# if not firebase_admin._apps:
-#     firebase_admin.initialize_app()
-# db = firestore.client()
+# Initialize Firebase Admin
+if not firebase_admin._apps:
+    firebase_admin.initialize_app()
+db = firestore.client()
 
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
@@ -23,22 +25,34 @@ def getFileFromGCS(gsBucket: str, filepath: str):
         bucket = storage_client.bucket(gsBucket)
         blob = bucket.blob(filepath)
         
-        file = io.BytesIO()
-        blob.download_to_file(file)
-        file.seek(0)
-        file.filename = filepath.split('/')[-1]
-        return file
+        # Need the file locally for external python script
+        _, local_path = tempfile.mkstemp(suffix=os.path.splitext(filepath)[1])
+        blob.download_to_filename(local_path)
+        return local_path
     except Exception as e:
-        print(f"Error fetching file {filepath} from bucket {gsBucket}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch file from storage")
+        print(f"Error fetching file from GCS: {e}")
+        return None
+
+def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case: str, filetype:  Optional[str] = None) -> str:
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(gsBucket)
+        blob = bucket.blob(f"{filepath}/{case}")
+        if not filetype:
+            blob.upload_from_file(file_buffer)
+        else:
+            blob.upload_from_file(file_buffer, content_type=filetype)
+            
+        return f"{filepath}/{case}"
+        
+    except Exception as e:
+        print(f"Error uploading file {filepath}/{case} to bucket {gsBucket}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload file to storage")
 
 class PubSubMessage(BaseModel):
-    message: dict
+    message: dict    
 
-# def separateTracks():
-    
-
-@app.post("/stem-midi-key/pubsub")
+@app.post("/stem-pubsub")
 def processAudio(pubsub_message: PubSubMessage):
     if "data" not in pubsub_message.message:
         return {"status": "error", "detail": "Invalid Pub/Sub message format"}
@@ -50,97 +64,97 @@ def processAudio(pubsub_message: PubSubMessage):
         print(f"Error decoding Pub/Sub message: {e}")
         return {"status": "error", "detail": "Failed to decode payload"}
 
-    # Variables for processing
-    # separate_audio - true or false
-    # stem - 4 or 6 if seaparated_audio is true else None
-    # midi - true or false
+    try:
+        separation_option = int(payload.get('separationOption', 0))
+        
+        if separation_option <= 0:
+            return {"status": "success", "detail": "No separation required"}
 
-    separate_audio: bool = payload.get('separated_audio')
-    stem: Optional[int] = 0
-    if separate_audio:
-        stem = payload.get('stem')
-    # generate_stems()
-    midi: bool = payload.get('midi')
+        if separation_option > 0:
+            gsBucket = payload.get('gsBucket')
+            filepath = payload.get('filepath')
+            filetype = payload.get('filetype')
+            if not filetype or not gsBucket or not filepath:
+                return {"status": "error", "detail": "Missing required parameters for separation"}
 
-    # try:
-    #     separateTracks()
-    # except:
+            if gsBucket.startswith("gs://"):
+                gsBucket = gsBucket[5:]
+            local_file_path = getFileFromGCS(gsBucket, filepath)
+            if not local_file_path:
+                return {"status": "error", "detail": "Failed to fetch file from GCS"}
 
-# # audio_files doc firestore:
-# bpm null
-# (null)
-# chordProgression null
-# (null)
-# filename "recording_2026-07-15_05-43-04"
-# (string)
-# filepath "cEoM6QYM8lcPtDHIru9ioHeW4WE2/audio/935ltxjLInv6jQCaaiaS"
-# (string)
-# filetype "m4a"
-# (string)
-# id "935ltxjLInv6jQCaaiaS"
-# (string)
-# key null
-# (null)
-# noiseReducedFilepath null
-# (null)
-# separationOption 0
-# (int64)
-# uploadedAt 15 July 2026 at 05:43:07 UTC+5:30
-# (timestamp)
-# userId "cEoM6QYM8lcPtDHIru9ioHeW4WE2"
-# (string)
-# usingNoiseReduced "test trigger"
+            out_dir = tempfile.mkdtemp()
+            # Separation function
+            try:
+                wav_supported_exts = ['wav', 'flac', 'aiff']
+                stem = separation_option
+                cmd = []
+                model = "htdemucs"
 
+                if filetype not in wav_supported_exts:
+                    cmd = ["--mp3"]
+                else:
+                    def get_encoding(sample_width):
+                        match sample_width:
+                            case 3:
+                                return "--int24"
+                            case 4:
+                                return "--float32"
+                            case _:
+                                return None
+                    encoding = get_encoding(AudioSegment.from_file(local_file_path).sample_width)
+                    if encoding:
+                        cmd.extend(["--wav", f"{encoding}"])
 
-if __name__ == "__main__":
-    filename = "acgtr-pretty-darn.wav".strip()
-    wav_supported_exts = ['wav', 'flac', 'aiff']
-    data = {
-        "separationOption": 2,
-        "midiOption": True,
-        "filetype": "wav",
-    }
-    filepath = ""
-    stem = int(data['separationOption'])
-    if stem > 0:
-        cmd = []
-        model = "htdemucs"
-        if data['filetype'] not in wav_supported_exts:
-            cmd = ["--mp3"]
-        else:
-            def get_encoding(sample_width):
-                match sample_width:
-                    case 3:
-                        return "--int24"
-                    case 4:
-                        return "--float32"
-                    case _:
-                        return None
-            encoding = get_encoding(AudioSegment.from_file(filename).sample_width)
-            if encoding:
-                cmd.extend(["--wav", f"{encoding}"])
-        if stem == 2:
-            cmd.extend(["--two-stems", "vocals"])
-        elif stem == 6:
-            model = "htdemucs_6s"
-            cmd.extend(["-n", model])
-        cmd.append(filename)
-        print(f"Running Demucs with command: {cmd}\n")
-        demucs.separate.main(cmd)
-        filepath = f"/separated/{model}/{filename}/"
+                if stem == 2:
+                    cmd.extend(["--two-stems", "vocals"])
+                elif stem == 6:
+                    model = "htdemucs_6s"
+                cmd.extend(["-n", model])
+                
+                cmd.extend(["-o", out_dir])
+                cmd.append(local_file_path)
+                
+                demucs.separate.main(cmd)
+                
+                filename_base = os.path.splitext(os.path.basename(local_file_path))[0]
+                demucs_output_dir = os.path.join(out_dir, model, filename_base)
+                
+                uploaded_files = []
+                if os.path.exists(demucs_output_dir):
+                    for file in os.listdir(demucs_output_dir):
+                        local_file = os.path.join(demucs_output_dir, file)
+                        if os.path.isfile(local_file):
+                            with open(local_file, "rb") as f:
+                                obj_name = uploadFileToGCS(gsBucket, filepath, f, case=f"demucs/{file}")
+                                uploaded_files.append(obj_name)
 
+                try:
+                    audio_id = filepath.split('/')[2].split('.')[0]
+                    doc_ref = db.collection('audio_files').document(audio_id)
+                    doc_ref.update({
+                        'separated_files': uploaded_files,
+                        'separation_status': 'completed'
+                    })
+                except Exception as db_err:
+                    print(f"Error saving to Firestore: {db_err}")
+                    return {"status": "error", "detail": "Failed to save results to Firestore"}
+                
+                return {"status": "success", "uploaded_files": uploaded_files}
+            except Exception as e:
+                print(f"Error during audio separation: {e}")
+                return {"status": "error", "detail": "Audio separation failed"}
+            finally:
+                # Cleanup local inputs and outputs regardless of success or failure
+                try:
+                    if os.path.exists(local_file_path):
+                        os.remove(local_file_path)
+                    import shutil
+                    if os.path.exists(out_dir):
+                        shutil.rmtree(out_dir)
+                except Exception as cleanup_err:
+                    print(f"Error during cleanup: {cleanup_err}")
 
-    # separate_audio = input("Do you want to separate the audio? (True/False): ").strip().lower() == 'true'
-    # file = AudioSegment.from_file(filename)
-    # sample_rate = file.frame_rate
-    # sample_width = file.sample_width
-    # data['encoding'] = file.sample_width * 8
-    # print(f"File: {filename}, Sample Rate: {sample_rate}, Sample Width: {sample_width}, Channels: {file.channels}")
-
-    # if separate_audio == True:
-    #     stem = int(input("Enter the number of stems (4 or 6): ").strip())
-
-        # demucs.separate.main(["--mp3", "--two-stems", "vocals", "-n", "mdx_extra", "track with space.mp3"])
-        # demucs.separate.main(["--mp3", "--two-stems", "vocals", "-n", "mdx_extra", "track with space.mp3"])
-    
-    # midi = input("Do you want to generate MIDI? (True/False): ").strip().lower() == 'true'
+    except Exception as e:
+        print(f"Error processing audio: {e}")
+        return {"status": "error", "detail": "Failed to process audio"}

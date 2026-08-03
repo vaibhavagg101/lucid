@@ -93,9 +93,10 @@ def process_audio_pubsub(pubsub_message: PubSubMessage):
         if gsBucket and gsBucket.startswith("gs://"):
             gsBucket = gsBucket[5:]
         filepath = payload.get("filepath")
-        filename = filepath.split('/')[-1]
         if not all([audio_id, gsBucket, filepath]):
             return {"status": "error", "detail": "Missing required fields in payload"}
+
+        filename = filepath.split('/')[-1]
     except Exception as e:
         print(f"Error parsing payload: {e}")
         return {"status": "error", "detail": "Failed to parse payload"}
@@ -136,6 +137,8 @@ def process_audio_pubsub(pubsub_message: PubSubMessage):
             max_octave_indexes.append(np.argmax(octaves_amplitude))
             prev_sample_number = sample_number
 
+        max_amplitude = max(max_amplitude, 1) # Prevent ZeroDivisionError for silent audio
+
         for octaves_amplitude in image_array_amplitudes:
             octaves_db = [round(20 * math.log10(max(x, 1) / max_amplitude), 1) for x in octaves_amplitude]
             image_array.append(octaves_db)
@@ -156,7 +159,6 @@ def process_audio_pubsub(pubsub_message: PubSubMessage):
             # highlight maximum frequency index with (255, 202, 40)
             max_idx = max_octave_indexes[i]
             rgb_image_array[i, max_idx] = (255/255, 202/255, 40/255)
-
 
         fig, ax = plt.subplots(figsize=(12, 12))
         file_buffer = io.BytesIO()
