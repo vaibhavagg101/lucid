@@ -110,7 +110,8 @@ def process_audio_pubsub(pubsub_message: PubSubMessage):
     try:
         file = AudioSegment.from_file(file_from_gcs)
         audio_frame_rate = file.frame_rate
-        if file.channels == 2:
+        audio_channels = file.channels
+        if audio_channels == 2:
             file = file.set_channels(1)
         samples = file.get_array_of_samples()
         numpy_array = np.array(samples)
@@ -185,8 +186,8 @@ def process_audio_pubsub(pubsub_message: PubSubMessage):
             doc_ref = db.collection('audio_files').document(audio_id)
             doc_ref.update({
                 'fingerprint_image_path': gsBucket_path,
-                'channels': file.channels,
-                'frame_rate': file.frame_rate,
+                'channels': audio_channels,
+                'frame_rate': audio_frame_rate,
                 'sample_width': file.sample_width,
             })
         except Exception as e:
