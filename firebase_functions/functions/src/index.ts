@@ -39,6 +39,7 @@ const db = getFirestore()
 
 const pubsub = new PubSub();
 const bg_processing_pubsub_topic = defineString('BG_PROCESSING_PUBSUB_TOPIC');
+const stem_pubsub_topic = defineString('STEM_PUBSUB_TOPIC');
 const bucket_name = defineString('GSBUCKET');
 
 export const onNewUserSignIn = functionsV1.auth.user().onCreate(async (user) => {
@@ -76,6 +77,25 @@ export const backgroundAudioProcessing = onDocumentUpdated("audio_files/{audio_i
     return null
 })
 
+export const triggerStemsCreation = onDocumentUpdated("audio_files/{audio_id}", (event) => {
+    const beforeValue = event.data?.before.data()
+    const updatedValue = event.data?.after.data()
+    if (updatedValue &&
+        beforeValue &&
+        updatedValue.separationOption != null &&
+        updatedValue.separationOption !== beforeValue.separationOption) {
+        const payload = {
+            separationOption: updatedValue.separationOption,
+            filepath: updatedValue.filepath,
+            filetype: updatedValue.filetype,
+            gsBucket: bucket_name.value()
+        }
+
+        const dataBuffer = Buffer.from(JSON.stringify(payload));
+        pubsub.topic(stem_pubsub_topic.value()).publishMessage({ data: dataBuffer });
+    }
+    return null
+})
 
 export const validateAudioFile = onDocumentCreated("audio_files/{audio_id}", async (event) => {
     if (!event.data) {
