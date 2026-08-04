@@ -1,7 +1,29 @@
-import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { app } from './authentication';
 
 export const db = getFirestore(app);
+
+export interface AudioFileDoc {
+  id: string;
+  filename: string;
+  filetype: string;
+  userId: string;
+  filepath: string;
+  uploadedAt: Timestamp;
+  usingNoiseReduced: boolean | null;
+  originalFilepath?: string;
+  separationOption: number;
+  separated_files?: string[];
+  separation_status?: string;
+  bpm: number | null;
+  key: string | null;
+  chords_csv_filepath?: string;
+  validated?: boolean;
+  channels?: number;
+  frame_rate?: number;
+  sample_width?: number;
+  midi_files?: string[];
+}
 
 export const generateAudioDocumentId = () => {
   return doc(collection(db, 'audio_files')).id;
@@ -29,21 +51,21 @@ export const createAudioFileDocument = async (audioId: string, userId: string, f
 
 export const filterAudioFilesByUser = async (userId: string) => {
   try {
-    const audioFilesRef = collection(db, 'audio_files');
-    const q = query(audioFilesRef, where('userId', '==', userId));
-    const querySnapshot = await getDocs(q);
+    const audioFilesRef = collection(db, 'audio_files')
+    const q = query(audioFilesRef, where('userId', '==', userId))
+    const querySnapshot = await getDocs(q)
 
     const audioFiles = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data()
-    }));
+    }))
 
-    return audioFiles;
+    return audioFiles
   } catch (error) {
-    console.error("Error fetching audio files:", error);
-    throw error;
+    console.error("Error fetching audio files:", error)
+    throw error
   }
-};
+}
 
 export const renameAudioFile = async (userId: string, audioId: string, newName: string): Promise<void> => {
   try {
@@ -105,6 +127,47 @@ export async function updateNR(pickedNR: boolean, userId: string, audioId: strin
     throw new Error("Failed to update database")
   }
 }
+// Live-updates the caller as chords/stems finish processing in the background.
+export const subscribeToAudioFile = (
+  audioId: string,
+  onData: (data: AudioFileDoc | null) => void,
+  onError: (error: Error) => void
+) => {
+  return onSnapshot(
+    doc(db, 'audio_files', audioId),
+    (docSnap) => {
+      onData(docSnap.exists() ? (docSnap.data() as AudioFileDoc) : null);
+    },
+    onError
+  );
+};
+
+export const getAudioFileDocument = async (audioId: string): Promise<AudioFileDoc | null> => {
+  const docSnap = await getDoc(doc(db, 'audio_files', audioId));
+  return docSnap.exists() ? (docSnap.data() as AudioFileDoc) : null;
+};
+
+// Changing this field is what the `triggerStemsCreation` Firebase Function watches to kick off stem separation.
+export async function updateSeparationOption(userId: string, audioId: string, separationOption: number): Promise<void> {
+  const audioDocRef = doc(collection(db, 'audio_files'), audioId)
+  const audioDoc = await getDoc(audioDocRef)
+
+  if (!audioDoc.exists()) {
+    throw new Error('Audio file not found');
+  }
+
+  if (audioDoc.data().userId !== userId) {
+    throw new Error('Unauthorized');
+  }
+
+  try {
+    await updateDoc(audioDocRef, { separationOption });
+  }
+  catch (e) {
+    throw new Error("Failed to update database")
+  }
+}
+
 export const waitForAudioValidation = (audioId: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     const unsubscribe = onSnapshot(
