@@ -21,15 +21,13 @@ export default function StartAudioProcessing() {
     const { originalAudioId, changeError } = useContext(NewAudioContext)
 
     const [selectedOption, setSelectedOption] = useState<SeparationOption | null>(null)
-    const [wantsMidi, setWantsMidi] = useState<boolean | null>(null)
     const [submitting, setSubmitting] = useState(false)
 
     const handleSelect = (option: SeparationOption) => {
         setSelectedOption(option)
-        setWantsMidi(null)
     }
 
-    const canSubmit = selectedOption !== null && (selectedOption !== 0 || wantsMidi !== null)
+    const canSubmit = selectedOption !== null
 
     const handleSubmit = async () => {
         if (!user || !originalAudioId || selectedOption === null) return
@@ -47,7 +45,7 @@ export default function StartAudioProcessing() {
 
     return (
         <div className="w-full">
-            <div className="flex min-h-110 w-full flex-col items-center justify-center">
+            <div className="flex min-h-110 sm:mt-6 md:mt-1 w-full flex-col items-center justify-center">
 
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-on-surface md:text-3xl">

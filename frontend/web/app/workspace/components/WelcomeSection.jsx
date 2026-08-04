@@ -24,6 +24,7 @@ export default function WelcomeSection({ userName, onCreateAudio }) {
                     text-on-primary
                     transition-colors
                     hover:bg-primary-variant
+                    cursor-pointer
                     md:w-auto
                 "
             >

@@ -41,46 +41,49 @@ function AudioFilesHistorySection({
                                         {file.filename}
                                     </p>
 
-                                    <span className="mt-2 inline-block rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
-                                        {file.filetype}
-                                    </span>
-                                    
-                                    {file.key && (
-                                        <span className="mt-2 inline-block rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
-                                            {file.key}
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                        <span className="inline-flex items-center rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
+                                            {file.filetype}
                                         </span>
-                                    )}
-        
-                                    {file.channels && (
-                                        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
-                                            {file.channels === 2 && (
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="8" cy="12" r="4" />
-                                                    <circle cx="16" cy="12" r="4" />
-                                                </svg>
-                                            )}
-                                            {file.channels === 1 && (
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="12" cy="12" r="4" />
-                                                </svg>
-                                            )}
-                                            {file.channels === 2 ? 'Stereo' : file.channels === 1 ? 'Mono' : `${file.channels} Channels`}
+
+                                        {file.key && (
+                                            <span className="inline-flex items-center rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
+                                                {file.key}
+                                            </span>
+                                        )}
+
+                                        {file.channels && (
+                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
+                                                {file.channels === 2 && (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="8" cy="12" r="4" />
+                                                        <circle cx="16" cy="12" r="4" />
+                                                    </svg>
+                                                )}
+                                                {file.channels === 1 && (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="12" cy="12" r="4" />
+                                                    </svg>
+                                                )}
+                                                {file.channels === 2 ? 'Stereo' : file.channels === 1 ? 'Mono' : `${file.channels} Channels`}
+                                            </span>
+                                        )}
+
+                                        <span className="inline-flex items-center rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
+                                            {file.frame_rate} Hz
                                         </span>
-                                    )}
 
-                                    <span className="mt-2 inline-block rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
-                                        {file.frame_rate} Hz
-                                    </span>
-
-                                    <span className="mt-2 inline-block rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
-                                        {file.sample_width * 8} bits
-                                    </span>
+                                        <span className="inline-flex items-center rounded-full bg-surface-variant px-3 py-1 text-xs font-medium text-on-surface-variant">
+                                            {file.sample_width * 8} bits
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-3 sm:shrink-0">
                                     <button
                                         onClick={() => router.push(`/workspace/audio/${file.id}`)}
                                         className="
+                                            cursor-pointer
                                             rounded-lg
                                             border
                                             border-outline/30
@@ -97,6 +100,7 @@ function AudioFilesHistorySection({
                                     <button
                                         onClick={() => onRename(file.id)}
                                         className="
+                                            cursor-pointer
                                             rounded-lg
                                             border
                                             border-outline/30

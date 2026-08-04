@@ -383,7 +383,7 @@ export default function NewAudio() {
                         {error && (
                             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative my-4 w-[95%] mx-auto flex justify-between items-center shadow-sm">
                                 <span className="block sm:inline">{error}</span>
-                                <button onClick={() => handleChangeError(null)} className="font-bold ml-4 hover:opacity-75">
+                                <button onClick={() => handleChangeError(null)} className="font-bold ml-4 cursor-pointer hover:opacity-75">
                                     ✕
                                 </button>
                             </div>

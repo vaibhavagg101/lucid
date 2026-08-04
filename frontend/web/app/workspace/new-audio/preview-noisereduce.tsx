@@ -215,21 +215,20 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
             {optedForNoiseReduce
                 ? (
                     <>
-                        {!nrBlob && (
+                        {!nrBlob && !noiseClip && (
                             <div className="flex flex-col items-center gap-3">
                                 <button onClick={() => { handleSelectClip(); setNoiseClip(true); }} className="min-w-55 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary hover:bg-primary-variant cursor-pointer transition-colors">
                                     Select Noise Clip
                                 </button>
+                            </div>)}
 
-                                {clipStartMs !== null && clipEndMs !== null && noiseClip && (
+                        {!loadingNr && noiseClip ?
+                            <div className="flex items-center justify-center gap-3">
+                                {clipStartMs !== null && clipEndMs !== null && (
                                     <span className="text-sm font-medium text-on-surface-variant text-center">
                                         Selected: {clipStartMs}ms - {clipEndMs}ms
                                     </span>
                                 )}
-                            </div>)}
-
-                        {noiseClip ?
-                            <div className="flex items-center justify-center gap-3">
                                 <button
                                     onClick={callNoiseReduce}
                                     className="min-w-55 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary hover:bg-primary-variant cursor-pointer transition-colors"
@@ -246,7 +245,11 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                             </div>
                             :
                             null}
-                        {!noiseClip && !nrBlob && <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">Start Noise Reduction without Clip</button>}
+                        {!noiseClip && !nrBlob && !loadingNr && (
+                            <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">
+                                Start Noise Reduction without Clip
+                            </button>
+                        )}
 
                         {loadingNr && <p className="mt-4 text-sm text-on-surface-variant">Processing audio and generating plots...</p>}
 

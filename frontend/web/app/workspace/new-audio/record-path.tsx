@@ -160,9 +160,9 @@ export default function RecordPath() {
     };
 
     useEffect(() => {
-        if (isRecording && recordingTime >= 600) {
+        if (isRecording && recordingTime >= 385) {
             stopRecording();
-            changeError("Maximum recording limit of 10 minutes reached.");
+            changeError("Maximum recording limit of 6.5 minutes reached.");
         }
     }, [recordingTime, isRecording]);
 
@@ -409,7 +409,7 @@ export default function RecordPath() {
                             </div>
 
                             <p className="mt-5 text-sm text-on-surface-variant">
-                                Max Recording Time: 10 minutes
+                                Max Recording Time: 6.5 minutes
                             </p>
                         </div>
                     ) : (
