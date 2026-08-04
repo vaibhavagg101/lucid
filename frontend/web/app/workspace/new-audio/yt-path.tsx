@@ -77,21 +77,49 @@ export default function YtPath() {
     }
 
     return (
-        <div>
-            <p>This feature is currently blocked due to legal implications</p>
-            {!loadingYT &&
-                <div>
-                    <input type="text" ref={YTurlRef} />
-                    <button className="btn btn-primary" disabled={true} onClick={handleConvert}>
-                        Convert
-                    </button>
+        <div className="w-full">
+            <div className="flex min-h-110 w-full flex-col items-center justify-center">
+
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-on-surface md:text-3xl">
+                        YouTube URL
+                    </h1>
+
+                    <p className="mt-2 text-sm text-on-surface-variant md:text-base">
+                        Download audio from a YouTube URL.
+                    </p>
                 </div>
-            }
-            {loadingYT &&
-                <div>
-                    Converting and downloading your youtube audio...
+
+                <div className="mt-8 w-full max-w-125 rounded-3xl border border-outline/30 px-6 py-8 text-center md:px-10">
+                    <div className="rounded-xl bg-tertiary-container px-4 py-3 text-sm text-on-tertiary">
+                        This feature is currently blocked due to legal implications.
+                    </div>
+
+                    {!loadingYT ? (
+                        <div className="mt-6 flex flex-col items-center gap-4">
+                            <input
+                                type="text"
+                                ref={YTurlRef}
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                disabled
+                                className="w-full rounded-xl border border-outline/30 bg-background px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant disabled:opacity-60"
+                            />
+
+                            <button
+                                onClick={handleConvert}
+                                disabled
+                                className="rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary opacity-80 cursor-not-allowed"
+                            >
+                                Convert
+                            </button>
+                        </div>
+                    ) : (
+                        <p className="mt-6 text-sm text-on-surface-variant">
+                            Converting and downloading your YouTube audio...
+                        </p>
+                    )}
                 </div>
-            }
+            </div>
         </div>
     )
 }

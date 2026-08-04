@@ -70,12 +70,10 @@ export default function DynamicWorkspace() {
     return (
         <MainSectionContainer>
             <MainContainer>
-
                 <WelcomeSection
                     userName={user.displayName || 'User'}
                     onCreateAudio={() => router.push('/workspace/new-audio')}
                 />
-
                 <AudioFilesHistorySection
                     files={userAudioFiles}
                     loading={audioFilesLoading}
