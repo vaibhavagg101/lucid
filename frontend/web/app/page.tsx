@@ -14,7 +14,7 @@ export default function Home() {
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
         >
-          <source src="videos/noise-reduction-720.webm" type="video/webm" />
+          <source src="/videos/noise-reduction-720.webm" type="video/webm" />
           Your browser does not support the video tag.
         </video>
 
@@ -51,7 +51,7 @@ export default function Home() {
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
         >
-          <source src="videos/track-separation-720.webm" type="video/webm" />
+          <source src="/videos/track-separation-720.webm" type="video/webm" />
           Your browser does not support the video tag.
         </video>
 
@@ -86,7 +86,7 @@ export default function Home() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
         >
-          <source src="videos/midi-playing-1080.webm" type="video/webm" />
+          <source src="/videos/midi-playing-1080.webm" type="video/webm" />
           Your browser does not support the video tag.
         </video>
 
@@ -121,7 +121,7 @@ export default function Home() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
         >
-          <source src="videos/analysis-1080.webm" type="video/webm" />
+          <source src="/videos/analysis-1080.webm" type="video/webm" />
           Your browser does not support the video tag.
         </video>
 

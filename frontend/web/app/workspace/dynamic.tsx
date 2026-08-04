@@ -13,7 +13,7 @@ export default function DynamicWorkspace() {
     const [userAudioFiles, setUserAudioFiles] = useState<any[]>([])
     const [audioFilesLoading, setAudioFilesLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { user, loading } = useAuth()
+    const { user } = useAuth()
     const router = useRouter()
 
     useEffect(() => {
@@ -37,10 +37,6 @@ export default function DynamicWorkspace() {
             fetchedAudioFiles()
         }
     }, [user])
-
-    if (loading) {
-        return <p>Loading...</p>
-    }
 
     if (!user) {
         return <p>Login to view your workspace.</p>

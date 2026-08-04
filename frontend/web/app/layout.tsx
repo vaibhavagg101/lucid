@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import Navbar from "./navbar/navbar";
 import { AuthProvider } from "./context/auth-context";
+import AuthGate from "./components/AuthGate";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -25,7 +26,7 @@ export default function RootLayout({
         <AuthProvider>
           <Navbar />
           {/* <div className="h-[calc(100dvh-4rem)]"> */}
-          {children}
+          <AuthGate>{children}</AuthGate>
           {/* </div> */}
         </AuthProvider>
       </body>

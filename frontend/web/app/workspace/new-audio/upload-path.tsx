@@ -152,11 +152,11 @@ export default function UploadPath() {
                         if (fileInputRef.current) {
                             fileInputRef.current.value = '';
                         }
-                        // Clear progress and change path after a delay
+                        // Briefly show the completed state before moving on
                         setTimeout(() => {
                             setProgress(0);
                             changeCurrentPath("PreviewNoiseReduce")
-                        }, 3000);
+                        }, 200);
                     } catch (err) {
                         changeError('Failed to save file details: ' + (err instanceof Error ? err.message : String(err)));
                         setUploading(false);
@@ -237,7 +237,7 @@ export default function UploadPath() {
                             : 'bg-primary hover:bg-primary-variant cursor-pointer'
                             }`}
                     >
-                        {validatingFile ? 'Validating...' : uploading ? 'Uploading...' : 'Choose file'}
+                        {validatingFile ? 'Validating...' : uploading ? 'Uploading...' : originalAudioId ? 'Upload complete' : 'Choose file'}
                     </button>
 
                     {progress > 0 && (

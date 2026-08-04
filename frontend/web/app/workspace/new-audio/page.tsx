@@ -17,7 +17,7 @@ import MainContainer from '../components/MainContainer';
 
 export default function NewAudio() {
     // Auth context 
-    const { user, loading } = useAuth()
+    const { user } = useAuth()
 
     // Local states passed as context
     const [originalAudioId, setOriginalAudioId] = useState<string | null>(null);
@@ -162,7 +162,7 @@ export default function NewAudio() {
                 <MainSectionContainer>
                     <MainContainer>
                         <div className="textcenter">
-                            {loading ? 'Loading...' : user ? null : 'Please log in.'}
+                            {user ? null : 'Please log in.'}
                         </div>
 
                         {/* Waveform of Original Audio File */}

@@ -45,6 +45,12 @@ export default function RecordPath() {
 
         const draw = () => {
             animationFrameRef.current = requestAnimationFrame(draw);
+
+            if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+
             analyser.getByteFrequencyData(dataArray);
 
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -373,27 +379,28 @@ export default function RecordPath() {
                                 {formatTime(recordingTime)}
                             </div>
 
-                            <div className="relative mt-6">
+                            <div className="mt-6 flex h-10 w-4/5 max-w-72 items-center justify-center">
                                 {isRecording && (
                                     <canvas
                                         ref={canvasRef}
-                                        height={40}
-                                        className="absolute bottom-full rounded-xl left-1/2 mb-2 h-10 w-4/5 max-w-72 -translate-x-1/2 opacity-80"
+                                        className="h-10 w-full rounded-xl opacity-80"
                                     />
                                 )}
+                            </div>
 
+                            <div className="mt-4">
                                 {isRecording ? (
                                     <button
                                         onClick={stopRecording}
-                                        className="rounded-xl bg-error px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 cursor-pointer"
+                                        className="rounded-xl bg-error px-6 py-3 text-sm font-medium text-on-error transition-colors hover:bg-red-700 cursor-pointer"
                                     >
-                                        <span className="mr-2 inline-block h-3 w-3 rounded-sm bg-white"></span>
+                                        <span className="mr-2 inline-block h-3 w-3 rounded-sm bg-on-error"></span>
                                         Stop Recording
                                     </button>
                                 ) : (
                                     <button
                                         onClick={startRecording}
-                                        className="rounded-xl bg-primary px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-variant cursor-pointer"
+                                        className="rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary transition-colors hover:bg-primary-variant cursor-pointer"
                                     >
                                         <span className="mr-2 inline-block h-3 w-3 rounded-full bg-error"></span>
                                         Start Recording
@@ -417,7 +424,7 @@ export default function RecordPath() {
                                 <div className="mt-4 flex justify-center">
                                     <button
                                         onClick={handlePlayPause}
-                                        className="rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-white"
+                                        className="rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-on-secondary transition-colors hover:bg-secondary-variant cursor-pointer"
                                     >
                                         {isPlaying ? 'Pause' : 'Play'}
                                     </button>
@@ -428,7 +435,7 @@ export default function RecordPath() {
                                 <button
                                     onClick={handleDiscard}
                                     disabled={uploadingBlob}
-                                    className="flex-1 rounded-xl border border-error px-4 py-3 text-sm font-medium text-error"
+                                    className="flex-1 rounded-xl border border-error px-4 py-3 text-sm font-medium text-error transition-colors hover:bg-error/10 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Discard
                                 </button>
@@ -436,7 +443,7 @@ export default function RecordPath() {
                                 <button
                                     onClick={handleConfirm}
                                     disabled={uploadingBlob}
-                                    className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-variant"
+                                    className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-on-primary transition-colors hover:bg-primary-variant cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Use Recording
                                 </button>
