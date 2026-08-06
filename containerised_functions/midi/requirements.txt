@@ -1,0 +1,6 @@
+basic-pitch
+fastapi
+pydantic
+uvicorn
+firebase-admin
+google-cloud-storage
