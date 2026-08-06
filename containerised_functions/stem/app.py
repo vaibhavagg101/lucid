@@ -93,6 +93,7 @@ def processAudio(pubsub_message: PubSubMessage):
 
                 if filetype not in wav_supported_exts:
                     cmd = ["--mp3"]
+                    filetype = "audio/mpeg"
                 else:
                     def get_encoding(sample_width):
                         match sample_width:
@@ -102,6 +103,7 @@ def processAudio(pubsub_message: PubSubMessage):
                                 return "--float32"
                             case _:
                                 return None
+                    filetype = "audio/wav"
                     encoding = get_encoding(AudioSegment.from_file(local_file_path).sample_width)
                     if encoding:
                         cmd.extend(["--wav", f"{encoding}"])
@@ -126,7 +128,7 @@ def processAudio(pubsub_message: PubSubMessage):
                         local_file = os.path.join(demucs_output_dir, file)
                         if os.path.isfile(local_file):
                             with open(local_file, "rb") as f:
-                                obj_name = uploadFileToGCS(gsBucket, filepath, f, case=f"demucs/{file}")
+                                obj_name = uploadFileToGCS(gsBucket, filepath, f, case=f"demucs/{file}", filetype=filetype)
                                 uploaded_files.append(obj_name)
 
                 try:
