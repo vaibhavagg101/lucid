@@ -215,7 +215,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
             {optedForNoiseReduce
                 ? (
                     <>
-                        {!nrBlob && !noiseClip && (
+                        {!nrBlob && !noiseClip && !loadingNr && (
                             <div className="flex flex-col items-center gap-3">
                                 <button onClick={() => { handleSelectClip(); setNoiseClip(true); }} className="min-w-55 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary hover:bg-primary-variant cursor-pointer transition-colors">
                                     Select Noise Clip

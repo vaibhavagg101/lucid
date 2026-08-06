@@ -49,7 +49,7 @@ export default function NewAudio() {
                 waveColor: 'rgb(0, 188, 212)',
                 progressColor: 'rgb(10, 15, 40)',
                 plugins: [regions],
-                minPxPerSec: 50,
+                // minPxPerSec: 50,
             }
         )
 

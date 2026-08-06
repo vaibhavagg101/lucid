@@ -8,8 +8,9 @@ function FilesContainer({ children }) {
                 border-outline/30
                 glassmorphism-suface
                 shadow-xs
-                px-6
+                px-4
                 py-4
+                sm:px-6
             "
         >
             {children}
