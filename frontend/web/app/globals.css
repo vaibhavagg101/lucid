@@ -33,7 +33,7 @@ https://m2.material.io/design/color/the-color-system.html#color-theme-creation
 }
 
 body {
-  background-color: var(--color-background);
+  /* background-color: var(--color-background); */
   color: var(--color-on-background);
   font-family: ui-sans-serif, system-ui, sans-serif;
 }

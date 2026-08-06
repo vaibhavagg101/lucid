@@ -24,10 +24,10 @@ export default function RootLayout({
     >
       <body className={`${montserrat.className} min-h-full flex flex-col h-dvh`}>
         <AuthProvider>
+          <div className="fixed top-0 w-full h-1.5 z-50 bg-primary"></div>
+          <div className="fixed bottom-0 w-full h-2 z-50 bg-primary/75 md:hidden"></div>
           <Navbar />
-          {/* <div className="h-[calc(100dvh-4rem)]"> */}
           <AuthGate>{children}</AuthGate>
-          {/* </div> */}
         </AuthProvider>
       </body>
     </html>

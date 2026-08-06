@@ -15,7 +15,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="navbar glassmorphism-primary z-50">
+    <nav className="navbar glassmorphism-primary z-40 mt-1.5">
       <Link href="/">
         <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="w-40" priority />
       </Link>
