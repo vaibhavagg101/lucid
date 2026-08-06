@@ -155,6 +155,7 @@ export default function DynamicAudioFile() {
                         separatedFiles={audioDoc.separated_files}
                         separationOption={audioDoc.separationOption}
                         separationStatus={audioDoc.separation_status}
+                        audioId={audioId}
                     />
                 )}
 
