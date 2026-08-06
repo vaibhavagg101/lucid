@@ -224,7 +224,10 @@ export default function UploadPath() {
                     <input
                         className="hidden"
                         type="file"
-                        accept=".wav,.mp3,.m4a,.aac,.webm,.ogg,audio/wav,audio/mpeg,audio/mp4,audio/aac,audio/webm,audio/ogg"
+                        accept={[
+                            ...ALLOWED_EXTENSIONS.map((ext) => `.${ext}`),
+                            ...ALLOWED_TYPES,
+                        ].join(',')}
                         ref={fileInputRef}
                         onChange={handleFileChange}
                     />

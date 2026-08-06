@@ -23,6 +23,7 @@ export interface AudioFileDoc {
   frame_rate?: number;
   sample_width?: number;
   midi_files?: string[];
+  fingerprint_image_path?: string;
 }
 
 export const generateAudioDocumentId = () => {

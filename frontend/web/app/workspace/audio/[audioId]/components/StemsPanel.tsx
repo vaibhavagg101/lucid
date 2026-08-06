@@ -16,6 +16,19 @@ function stemLabel(path: string) {
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
+// iOS Safari silently fails (blank waveform, no error) when several WaveSurfer
+// instances decode audio via Web Audio at the same time, so stems must load one at a time.
+let stemLoadQueue: Promise<unknown> = Promise.resolve();
+
+function queueStemLoad<T>(task: () => Promise<T>): Promise<T> {
+    const run = stemLoadQueue.then(task, task);
+    stemLoadQueue = run.then(
+        () => undefined,
+        () => undefined
+    );
+    return run;
+}
+
 function StemRow({ path }: { path: string }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const waveRef = useRef<WaveSurfer | null>(null);
@@ -50,6 +63,7 @@ function StemRow({ path }: { path: string }) {
     useEffect(() => {
         if (!containerRef.current || !blob) return;
 
+        let cancelled = false;
         const wave = WaveSurfer.create({
             container: containerRef.current,
             height: 60,
@@ -59,10 +73,19 @@ function StemRow({ path }: { path: string }) {
 
         wave.on('play', () => setPlaying(true));
         wave.on('pause', () => setPlaying(false));
-        wave.loadBlob(blob);
+        wave.on('error', (err) => {
+            console.error('Error decoding stem waveform:', err);
+            if (!cancelled) setError('Failed to load stem.');
+        });
         waveRef.current = wave;
 
+        queueStemLoad(() => (cancelled ? Promise.resolve() : wave.loadBlob(blob))).catch((err) => {
+            console.error('Error loading stem waveform:', err);
+            if (!cancelled) setError('Failed to load stem.');
+        });
+
         return () => {
+            cancelled = true;
             wave.destroy();
             waveRef.current = null;
         };

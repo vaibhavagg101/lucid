@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import FilesContainer from './FilesContainer';
 import EmptyState from './EmptyState';
+import FingerprintThumbnail from './FingerprintThumbnail';
 import { useRouter } from 'next/navigation';
 
 const SORT_OPTIONS = [
@@ -95,44 +96,53 @@ function AudioFilesHistorySection({
                     {sortedFiles.map((file) => (
                         <FilesContainer key={file.id}>
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                                <div>
-                                    <p className="wrap-break-word text-md py-2 not-md:text-center font-medium leading-snug text-on-surface">
-                                        {file.filename}
-                                    </p>
+                                <div className="flex min-w-0 items-center gap-3">
+                                    {file.fingerprint_image_path && (
+                                        <FingerprintThumbnail
+                                            filepath={file.fingerprint_image_path}
+                                            alt={`Audio fingerprint for ${file.filename}`}
+                                        />
+                                    )}
 
-                                    <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                        <span className="inline-flex items-center rounded-full bg-surface-variant px-2.5 py-1 text-xs font-medium text-on-surface-variant sm:px-3">
-                                            {file.filetype}
-                                        </span>
+                                    <div className="min-w-0">
+                                        <p className="wrap-break-word text-md py-2 font-medium leading-snug text-on-surface">
+                                            {file.filename}
+                                        </p>
 
-                                        {formatUploadedAt(file.uploadedAt) && (
+                                        <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
                                             <span className="inline-flex items-center rounded-full bg-surface-variant px-2.5 py-1 text-xs font-medium text-on-surface-variant sm:px-3">
-                                                {formatUploadedAt(file.uploadedAt)}
+                                                {file.filetype}
                                             </span>
-                                        )}
 
-                                        {file.key && (
-                                            <span className="inline-flex items-center rounded-full bg-surface-variant px-2.5 py-1 text-xs font-medium text-on-surface-variant sm:px-3">
-                                                {file.key}
-                                            </span>
-                                        )}
+                                            {formatUploadedAt(file.uploadedAt) && (
+                                                <span className="inline-flex items-center rounded-full bg-surface-variant px-2.5 py-1 text-xs font-medium text-on-surface-variant sm:px-3">
+                                                    {formatUploadedAt(file.uploadedAt)}
+                                                </span>
+                                            )}
 
-                                        {file.channels && (
-                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-variant px-2.5 py-1 text-xs font-medium text-on-surface-variant sm:px-3">
-                                                {file.channels === 2 && (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <circle cx="8" cy="12" r="4" />
-                                                        <circle cx="16" cy="12" r="4" />
-                                                    </svg>
-                                                )}
-                                                {file.channels === 1 && (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <circle cx="12" cy="12" r="4" />
-                                                    </svg>
-                                                )}
-                                                {file.channels === 2 ? 'Stereo' : file.channels === 1 ? 'Mono' : `${file.channels} Channels`}
-                                            </span>
-                                        )}
+                                            {file.key && (
+                                                <span className="inline-flex items-center rounded-full bg-surface-variant px-2.5 py-1 text-xs font-medium text-on-surface-variant sm:px-3">
+                                                    {file.key}
+                                                </span>
+                                            )}
+
+                                            {file.channels && (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-variant px-2.5 py-1 text-xs font-medium text-on-surface-variant sm:px-3">
+                                                    {file.channels === 2 && (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <circle cx="8" cy="12" r="4" />
+                                                            <circle cx="16" cy="12" r="4" />
+                                                        </svg>
+                                                    )}
+                                                    {file.channels === 1 && (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <circle cx="12" cy="12" r="4" />
+                                                        </svg>
+                                                    )}
+                                                    {file.channels === 2 ? 'Stereo' : file.channels === 1 ? 'Mono' : `${file.channels} Channels`}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
