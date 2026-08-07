@@ -36,6 +36,8 @@ Covers all four functions: `onNewUserSignIn`, `backgroundAudioProcessing`,
 
 ```bash
 cd containerised_functions/chords
+python3 -m venv env
+source env/bin/activate
 pip install pandas numpy pytest   # if not already installed
 python3 -m pytest
 ```
