@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  frontend:
+    name: Frontend unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/web/package-lock.json
+      - run: npm ci
+        working-directory: frontend/web
+      - run: npm test
+        working-directory: frontend/web
+
+  functions:
+    name: Firebase functions tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: firebase_functions/functions/package-lock.json
+      - run: npm ci
+        working-directory: firebase_functions/functions
+      - run: npm run build
+        working-directory: firebase_functions/functions
+      - run: npm test
+        working-directory: firebase_functions/functions
+
+  chords:
+    name: Chords key detection tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install pandas numpy pytest
+        working-directory: containerised_functions/chords
+      - run: pytest
+        working-directory: containerised_functions/chords
