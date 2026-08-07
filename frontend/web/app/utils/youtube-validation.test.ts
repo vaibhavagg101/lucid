@@ -5,6 +5,9 @@ import {
   validateYoutubeVideoDuration,
 } from './youtube-validation';
 
+// These helpers gate the whole YouTube flow — a bad URL here never reaches
+// the yt-dlp service. The duration check is only a first pass; the cloud
+// function enforces the same 10-minute limit again server-side.
 const VIDEO_ID = 'dQw4w9WgXcQ';
 
 describe('getYoutubeVideoId', () => {
@@ -41,6 +44,7 @@ describe('getYoutubeVideoId', () => {
     expect(getYoutubeVideoId('https://www.youtube.com/watch')).toBeNull();
   });
 
+  // Video ids are always 11 characters, so anything else is rejected.
   it('returns null for an incorrectly sized video id', () => {
     expect(getYoutubeVideoId('https://www.youtube.com/watch?v=tooshort')).toBeNull();
     expect(getYoutubeVideoId('https://youtu.be/thisidistoolong123456')).toBeNull();
@@ -69,6 +73,8 @@ describe('isValidYoutubeUrl', () => {
 
 describe('validateYoutubeVideoDuration', () => {
   const fetchMock = vi.fn();
+  // Real YouTube pages embed a `ytInitialPlayerResponse` JSON blob with the
+  // video metadata; here we fake just enough of that HTML for the parser.
   const playerResponseHtml = (lengthSeconds: string) =>
     `<html><script>var ytInitialPlayerResponse = {"videoDetails":{"lengthSeconds":"${lengthSeconds}"}};</script></html>`;
 
@@ -107,6 +113,9 @@ describe('validateYoutubeVideoDuration', () => {
     expect(result.error).toContain('Failed to fetch');
   });
 
+  // The limit is enforced again in the cloud function, so when we can't
+  // read the metadata we deliberately let the request through rather than
+  // blocking valid videos on a parsing hiccup.
   it('does not fail closed when duration metadata is unavailable', async () => {
     fetchMock.mockResolvedValue({
       ok: true,

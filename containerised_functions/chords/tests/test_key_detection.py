@@ -1,4 +1,9 @@
-"""Unit tests for the key detection module used by the chords service."""
+"""Unit tests for the key detection module used by the chords service.
+
+detect_key_from_chords() feeds the chord CSV produced by the ISMIR2019
+recognizer into a Krumhansl-Schmuckler correlation, so these tests lock in
+the chord-label format and the key it should come up with.
+"""
 
 import csv
 
@@ -15,6 +20,8 @@ from key_detection import (
 
 
 def _write_chords_csv(tmp_path, rows):
+    # Mirrors what the container uploads: a header row followed by
+    # start_time, end_time, chord rows.
     path = tmp_path / "chords.csv"
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
@@ -24,6 +31,8 @@ def _write_chords_csv(tmp_path, rows):
 
 
 class TestParseChord:
+    # Chord labels use the ISMIR2019 short form: root note, a colon, then
+    # the quality (e.g. "A:min"), not the usual "Am" shorthand.
     def test_returns_none_for_no_chord(self):
         assert parse_chord("N") == (None, None)
 
@@ -41,6 +50,8 @@ class TestParseChord:
 
 
 class TestChordToPitchDistribution:
+    # Each chord becomes a 12-bin pitch-class vector; these tests check the
+    # intervals each quality contributes (major third, minor seventh, ...).
     def test_major_triad(self):
         pitches = chord_to_pitch_distribution(0, "maj")
         expected = np.zeros(12)
@@ -80,6 +91,8 @@ class TestCreateKeyProfiles:
             assert f"{pitch} Major" in profiles
             assert f"{pitch} Minor" in profiles
 
+    # The profiles are mean-centred before correlation, which is what makes
+    # the Pearson comparison meaningful.
     def test_profiles_are_mean_centred(self):
         profiles = create_key_profiles()
         for profile in profiles.values():
@@ -98,6 +111,7 @@ class TestDetectKeyFromChords:
             ],
         )
 
+        # A plain C-F-G cadence should always come back as C major.
         assert detect_key_from_chords(csv_path) == "C Major"
 
     def test_detects_a_minor_from_an_am_dm_em_progression(self, tmp_path):

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { parseChordsCsv } from './parseChordsCsv';
 
+// The chords container writes a start_time,end_time,chord CSV to GCS after
+// running the ISMIR2019 model. The Chords panel parses it with this helper
+// and renders the segments, so the parsed shape has to match exactly.
 describe('parseChordsCsv', () => {
   it('parses a CSV with a header row', () => {
     const csv = [
@@ -17,6 +20,7 @@ describe('parseChordsCsv', () => {
     ]);
   });
 
+  // The parser tolerates header-less files too, just in case.
   it('parses a CSV without a header row', () => {
     const csv = ['0.0,2.5,C:maj', '2.5,5.0,G:7'].join('\n');
 
@@ -32,6 +36,7 @@ describe('parseChordsCsv', () => {
     expect(parseChordsCsv(csv)).toEqual([{ start: 0, end: 2.5, chord: 'C' }]);
   });
 
+  // A corrupt row shouldn't blow up the whole panel, just be skipped.
   it('filters out rows with non-numeric timestamps', () => {
     const csv = [
       'start_time,end_time,chord',

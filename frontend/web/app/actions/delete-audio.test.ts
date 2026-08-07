@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// deleteAudioFile is the security-sensitive action: it verifies the caller's
+// ID token, makes sure the file actually belongs to them, and only then
+// removes the GCS blobs and the Firestore document. The admin SDK is fully
+// mocked so the suite runs without any real Firebase credentials.
 const mocks = vi.hoisted(() => {
   const verifyIdToken = vi.fn();
   const docGet = vi.fn();
@@ -38,6 +42,7 @@ import { deleteAudioFile } from './delete-audio';
 
 describe('deleteAudioFile', () => {
   beforeEach(() => {
+    // Reset every mock so call counts don't leak between tests.
     mocks.verifyIdToken.mockReset();
     mocks.docGet.mockReset();
     mocks.docDelete.mockReset();
@@ -60,10 +65,14 @@ describe('deleteAudioFile', () => {
     });
 
     expect(result).toEqual({ deleted: true });
+    // All derived files live under the original file's path, so one prefix
+    // delete wipes the audio, chords, stems, etc. in one go.
     expect(mocks.deleteFiles).toHaveBeenCalledWith({ prefix: 'user-1/audio/audio-1.mp3' });
     expect(mocks.docDelete).toHaveBeenCalled();
   });
 
+  // The bucket can come in with or without the gs:// prefix depending on
+  // where it's read from, so both must work.
   it('strips a gs:// prefix from the bucket name', async () => {
     mocks.verifyIdToken.mockResolvedValue({ uid: 'user-1' });
     mocks.docGet.mockResolvedValue({
@@ -101,6 +110,8 @@ describe('deleteAudioFile', () => {
     expect(mocks.deleteFiles).not.toHaveBeenCalled();
   });
 
+  // The important one: deleting someone else's file must fail and touch
+  // nothing.
   it('rejects a request for another user\u2019s file', async () => {
     mocks.verifyIdToken.mockResolvedValue({ uid: 'user-1' });
     mocks.docGet.mockResolvedValue({
