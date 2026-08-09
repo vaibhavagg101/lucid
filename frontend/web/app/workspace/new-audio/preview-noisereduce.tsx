@@ -1,14 +1,15 @@
 'use client'
 
-import { noiseReduce, NoiseReduceRequest, NoiseReduceResponse } from '@/app/actions/noisereduce';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { formatTime, NewAudioContext } from './new-audio-context';
+import { noiseReduce, NoiseReduceRequest } from '@/app/actions/noisereduce';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { NewAudioContext } from './new-audio-context';
 import { useAuth } from '@/app/context/auth-context';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, updateNR } from '@/app/google-firebase/firestore';
 import { storage } from '@/app/google-firebase/storage';
 import { ref, getBlob } from 'firebase/storage';
 import WaveSurfer from 'wavesurfer.js';
+import ZoomPlugin from 'wavesurfer.js/dist/plugins/zoom.esm.js';
 
 interface PreviewNoiseReduceProps {
     clipStartMs: number | null;
@@ -17,7 +18,7 @@ interface PreviewNoiseReduceProps {
 }
 
 export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelectClip }: PreviewNoiseReduceProps) {
-    const { user, loading } = useAuth()
+    const { user } = useAuth()
 
     const { originalAudioId, fileExt, fileType, changeOriginalAudioBlob, changeCurrentPath, changeError } = useContext(NewAudioContext)
 
@@ -44,13 +45,19 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                     waveRef.current.destroy()
                 }
 
+                const zoom = ZoomPlugin.create({
+                    scale: 0.5,
+                    maxZoom: 1000,
+                });
+
                 const wave = WaveSurfer.create(
                     {
                         container: wavesurferContainerRefNR.current,
                         height: 100,
                         waveColor: 'rgb(28, 27, 31)',
                         progressColor: 'rgb(255, 202, 40)',
-                        minPxPerSec: 50,
+                        // minPxPerSec: 50,
+                        plugins: [zoom],
                     }
                 )
 
@@ -267,7 +274,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
 
                                 <div>
                                     <h3 className="mb-3 text-lg font-semibold text-on-surface">Noise Reduced Audio</h3>
-                                    <div ref={wavesurferContainerRefNR} className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background"></div>
+                                    <div ref={wavesurferContainerRefNR} className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background touch-pan-y"></div>
 
                                     <div className="mt-4 flex justify-center">
                                         <button
@@ -298,7 +305,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                             onClick={pickNR}
                                             className="min-w-45 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary transition-colors hover:bg-primary-variant cursor-pointer"
                                         >
-                                            Use NR Audio
+                                            Use Noise-Reduced Audio
                                         </button>
 
                                         <button
@@ -321,7 +328,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                             }}
                             className="w-full rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary transition-colors hover:bg-primary-variant cursor-pointer sm:w-auto sm:min-w-53.75"
                         >
-                            Preview Noise Reduction?
+                            Preview Noise Reduction
                         </button>
 
                         <button

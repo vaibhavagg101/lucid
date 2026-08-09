@@ -8,7 +8,7 @@ import { NewAudioContext } from "./new-audio-context";
 import WaveSurfer from 'wavesurfer.js';
 
 export default function RecordPath() {
-    const { user, loading } = useAuth()
+    const { user } = useAuth()
     const { changeOriginalAudioId, changeOriginalAudioBlob, changeFileType, changeFileExt, changeError, changeCurrentPath } = useContext(NewAudioContext)
 
     const [isRecording, setIsRecording] = useState(false);

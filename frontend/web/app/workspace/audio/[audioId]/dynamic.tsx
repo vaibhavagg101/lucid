@@ -101,7 +101,6 @@ export default function DynamicAudioFile() {
         { id: 'overview', label: 'Overview' },
         { id: 'chords', label: 'Chords' },
         { id: 'stems', label: 'Stems' },
-        // ...(audioDoc.midi_files?.length ? [{ id: 'midi' as Tab, label: 'MIDI' }] : []),
     ];
 
     return (
@@ -170,7 +169,7 @@ export default function DynamicAudioFile() {
                 )}
 
                 {error && (
-                    <div className="mt-4 flex w-full items-center justify-between rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-red-700 shadow-sm">
+                    <div className="mt-4 flex w-full items-center justify-between rounded-lg border bg-error px-4 py-3 text-on-error shadow-sm">
                         <span>{error}</span>
                         <button onClick={() => setError(null)} className="ml-4 cursor-pointer font-bold hover:opacity-75">
                             ✕

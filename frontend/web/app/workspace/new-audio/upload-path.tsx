@@ -26,7 +26,7 @@ const ALLOWED_TYPES = Array.from(new Set(Object.values(EXTENSION_TO_TYPE_MAP).fl
 
 export default function UploadPath() {
     const router = useRouter();
-    const { user, loading } = useAuth()
+    const { user } = useAuth()
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -34,11 +34,8 @@ export default function UploadPath() {
 
     const { originalAudioId,
         changeOriginalAudioId,
-        fileExt,
         changeFileExt,
-        fileType,
         changeFileType,
-        originalAudioBlob,
         changeOriginalAudioBlob,
         changeCurrentPath,
         changeError } = useContext(NewAudioContext)

@@ -114,7 +114,7 @@ export default function StartAudioProcessing() {
                             : 'bg-primary hover:bg-primary-variant cursor-pointer'
                             }`}
                     >
-                        {submitting ? 'Starting Processing...' : 'Confirm & Continue'}
+                        {submitting ? 'Processing...' : 'Confirm & Continue'}
                     </button>
                 )}
             </div>
