@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import ZoomPlugin from 'wavesurfer.js/dist/plugins/zoom.esm.js';
 import { fetchStorageBlob, triggerBlobDownload } from '@/app/google-firebase/storage';
 import { useAuth } from '@/app/context/auth-context';
 import { triggerMidiConversion } from '@/app/actions/midi';
@@ -129,11 +130,17 @@ function StemRow({
         if (!containerRef.current || !blob) return;
 
         let cancelled = false;
+        const zoom = ZoomPlugin.create({
+            scale: 0.5,
+            maxZoom: 1000,
+        });
+
         const wave = WaveSurfer.create({
             container: containerRef.current,
             height: 60,
             waveColor: 'rgb(0, 188, 212)',
             progressColor: 'rgb(10, 15, 40)',
+            plugins: [zoom],
         });
 
         wave.on('play', () => setPlaying(true));
@@ -287,9 +294,9 @@ function StemRow({
 
             {/* Warning + confirm for "other" / "no_vocals" stems */}
             {midiState === 'confirming' && (
-                <div className="flex flex-col gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                    <p className="text-xs font-medium text-amber-400">
-                        ⚠ Best results require a single instrument
+                <div className="flex flex-col gap-2 rounded-xl border bg-tertiary-container px-4 py-3">
+                    <p className="text-xs font-medium text-on-surface">
+                        Best results require a single instrument
                     </p>
                     <p className="text-xs text-on-surface-variant">
                         The &ldquo;{stemLabel(path)}&rdquo; stem may contain multiple mixed instruments. MIDI
@@ -299,7 +306,7 @@ function StemRow({
                     <div className="mt-1 flex gap-2">
                         <button
                             onClick={submitMidiJob}
-                            className="cursor-pointer rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-500/30"
+                            className="cursor-pointer rounded-lg bg-tertiary-container px-3 py-1.5 text-xs font-medium text-on-surface transition-colors hover:bg-tertiary"
                         >
                             Convert anyway
                         </button>
@@ -314,12 +321,12 @@ function StemRow({
             )}
 
             {midiState === 'error' && midiError && (
-                <p className="text-xs text-red-400">{midiError}</p>
+                <p className="text-xs text-error">{midiError}</p>
             )}
 
             <div
                 ref={containerRef}
-                className="w-full overflow-hidden rounded-xl border border-outline/30 bg-background"
+                className="w-full overflow-hidden rounded-xl border border-outline/30 bg-background touch-pan-y"
             />
 
             {loading && <p className="text-xs text-on-surface-variant">Loading stem...</p>}

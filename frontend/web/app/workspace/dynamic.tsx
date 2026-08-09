@@ -44,7 +44,11 @@ export default function DynamicWorkspace() {
     }, [user])
 
     if (!user) {
-        return <p>Login to view your workspace.</p>
+        return (
+            <div className="bg-error text-on-error px-4 py-3 rounded relative my-4 w-[95%] mx-auto flex justify-between items-center shadow-xs">
+                <span className="block sm:inline">Login to view your workspace.</span>
+            </div>
+        )
     }
 
     async function submitRename(newName: string) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import ZoomPlugin from 'wavesurfer.js/dist/plugins/zoom.esm.js';
 import { formatTime } from '@/app/utils/format-time';
 import { triggerBlobDownload } from '@/app/google-firebase/storage';
 
@@ -20,12 +21,17 @@ export default function AudioPlayer({ audioBlob, downloadName, onTimeUpdate }: A
     useEffect(() => {
         if (!containerRef.current || !audioBlob) return;
 
+        const zoom = ZoomPlugin.create({
+            scale: 0.5,
+            maxZoom: 1000,
+        });
+
         const wave = WaveSurfer.create({
             container: containerRef.current,
             height: 100,
             waveColor: 'rgb(0, 188, 212)',
             progressColor: 'rgb(10, 15, 40)',
-            // minPxPerSec: 50,
+            plugins: [zoom],
         });
 
         wave.on('ready', () => setDurationStr(formatTime(wave.getDuration())));
@@ -40,7 +46,6 @@ export default function AudioPlayer({ audioBlob, downloadName, onTimeUpdate }: A
             wave.destroy();
             waveRef.current = null;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [audioBlob]);
 
     const handleDownload = () => {
@@ -59,7 +64,7 @@ export default function AudioPlayer({ audioBlob, downloadName, onTimeUpdate }: A
         <div className="w-full rounded-3xl border border-outline/30 p-6 md:p-8">
             <div
                 ref={containerRef}
-                className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background"
+                className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background touch-pan-y"
             ></div>
 
             <div className="mt-3 flex w-full justify-between px-1 text-xs font-medium text-on-surface">

@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useRef, useContext, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { NewAudioContext, formatTime } from './new-audio-context';
 import { useAuth } from '../../context/auth-context';
-import { useRouter } from 'next/navigation';
 import RecordPath from './record-path'
 import UploadPath from './upload-path'
 import YtPath from './yt-path'
@@ -11,6 +10,7 @@ import PreviewNoiseReduce from './preview-noisereduce';
 import StartAudioProcessing from './start-audio-processing';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
+import ZoomPlugin from 'wavesurfer.js/dist/plugins/zoom.esm.js';
 import MainSectionContainer from '../components/MainSectionContainer';
 import MainContainer from '../components/MainContainer';
 
@@ -41,6 +41,10 @@ export default function NewAudio() {
         if (!wavesurferContainerRefOG.current) return;
 
         const regions = RegionsPlugin.create();
+        const zoom = ZoomPlugin.create({
+            scale: 0.5,
+            maxZoom: 1000,
+        });
 
         const wave = WaveSurfer.create(
             {
@@ -48,7 +52,7 @@ export default function NewAudio() {
                 height: 100,
                 waveColor: 'rgb(0, 188, 212)',
                 progressColor: 'rgb(10, 15, 40)',
-                plugins: [regions],
+                plugins: [regions, zoom],
                 // minPxPerSec: 50,
             }
         )
@@ -65,20 +69,6 @@ export default function NewAudio() {
             setClipEndMs(Math.round(region.end * 1000));
         });
 
-        // Add wheel event listener for native trackpad pinch/mouse-wheel zooming
-        const handleWheel = (e: WheelEvent) => {
-            e.preventDefault();
-            const currentZoom = wave.options.minPxPerSec || 50;
-            if (e.deltaY < 0) {
-                // Zoom in
-                wave.zoom(currentZoom * 1.1);
-            } else {
-                // Zoom out
-                wave.zoom(Math.max(10, currentZoom / 1.1));
-            }
-        };
-        wavesurferContainerRefOG.current.addEventListener('wheel', handleWheel, { passive: false });
-
         if (originalAudioBlob) {
             wave.loadBlob(originalAudioBlob);
         }
@@ -86,7 +76,6 @@ export default function NewAudio() {
         wsRegionsRef.current = regions;
 
         return () => {
-            wavesurferContainerRefOG.current?.removeEventListener('wheel', handleWheel);
             wave.destroy();
             originalAudioWave.current = null;
             wsRegionsRef.current = null;
@@ -162,14 +151,14 @@ export default function NewAudio() {
                 <MainSectionContainer>
                     <MainContainer>
                         <div className="textcenter">
-                            {user ? null : 'Please log in.'}
+                            {user ? null : 'Please log in to add audio to your workspace.'}
                         </div>
 
                         {/* Waveform of Original Audio File */}
                         {originalAudioBlob && (
                             <div className="w-full px-4 pt-6 md:px-8 md:pt-8 lg:px-12 lg:pt-10">
 
-                                <div className="flex w-full flex-col items-center rounded-[32px] bg-surface px-5 py-12 shadow-sm sm:px-8 md:px-10 md:py-14 lg:px-12">
+                                <div className="flex w-full flex-col items-center rounded-4xl bg-surface px-5 py-12 shadow-sm sm:px-8 md:px-10 md:py-14 lg:px-12">
 
                                     <div className="text-center">
                                         <h1 className="text-2xl font-bold text-on-surface sm:text-3xl lg:text-4xl">
@@ -181,11 +170,11 @@ export default function NewAudio() {
                                         </p>
                                     </div>
 
-                                    <div className="mt-8 w-full max-w-[1080px] rounded-3xl border border-outline/30 p-6 md:p-8">
+                                    <div className="mt-8 w-full max-w-270 rounded-3xl border border-outline/30 p-6 md:p-8">
 
                                         <div
                                             ref={wavesurferContainerRefOG}
-                                            className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background"
+                                            className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background touch-pan-y"
                                         ></div>
 
                                         <div className="mt-3 flex w-full justify-between px-1 text-xs font-medium text-on-surface">
@@ -381,7 +370,7 @@ export default function NewAudio() {
                         }
 
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative my-4 w-[95%] mx-auto flex justify-between items-center shadow-sm">
+                            <div className="bg-error text-on-error px-4 py-3 rounded relative my-4 w-[95%] mx-auto flex justify-between items-center shadow-sm">
                                 <span className="block sm:inline">{error}</span>
                                 <button onClick={() => handleChangeError(null)} className="font-bold ml-4 cursor-pointer hover:opacity-75">
                                     ✕
