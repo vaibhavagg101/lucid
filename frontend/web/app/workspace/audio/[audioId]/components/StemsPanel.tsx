@@ -314,7 +314,7 @@ function StemRow({
             )}
 
             {midiState === 'error' && midiError && (
-                <p className="text-xs text-red-400">{midiError}</p>
+                <p className="text-xs text-error">{midiError}</p>
             )}
 
             <div

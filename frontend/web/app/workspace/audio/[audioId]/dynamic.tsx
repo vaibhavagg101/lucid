@@ -11,6 +11,7 @@ import AudioPlayer from './components/AudioPlayer';
 import AudioDetails from './components/AudioDetails';
 import ChordsPanel from './components/ChordsPanel';
 import StemsPanel from './components/StemsPanel';
+import MainAudioMIDI from './components/MainAudioMIDI';
 
 type Tab = 'overview' | 'chords' | 'stems';
 
@@ -128,6 +129,15 @@ export default function DynamicAudioFile() {
                         onTimeUpdate={setCurrentTime}
                     />
                 </div>
+
+                {audioDoc.separationOption == 0 ? (
+                    <div className="mt-8 w-full">
+                        <MainAudioMIDI
+                            audioId={audioId}
+                            audioDoc={audioDoc}
+                        />
+                    </div>
+                ) : null}
 
                 <div className="mt-8 flex w-full gap-2 border-b border-outline/30">
                     {tabs.map((tab) => (
