@@ -1,0 +1,9 @@
+Run these commands in your terminal:
+  sudo add-apt-repository ppa:deadsnakes/ppa
+  sudo apt update
+  sudo apt install python3.10 python3.10-venv
+
+In venv:
+  pip install --no-cache-dir -U pip
+  pip install --no-cache-dir "setuptools<70.0.0" wheel
+  pip install --no-cache-dir -r requirements.txt
