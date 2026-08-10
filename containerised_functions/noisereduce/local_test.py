@@ -1,3 +1,4 @@
+# Local test script to run noise reduction on audio files without cloud setup.
 import sys
 import numpy as np
 import io
@@ -9,6 +10,7 @@ from pydub import AudioSegment
 from pydub.effects import normalize
 from pathlib import Path
 
+# Function to handle process file.
 def process_file(file_path):
     print(f"Processing: {file_path}")
     

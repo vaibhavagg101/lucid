@@ -1,3 +1,4 @@
+# FastAPI web service that separates audio tracks into individual stems (vocals, drums, bass, etc.).
 import base64
 import json
 import os
@@ -19,6 +20,7 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app()
 db = firestore.client()
 
+# Downloads a file from Google Cloud Storage to local disk.
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
         storage_client = storage.Client()
@@ -33,6 +35,7 @@ def getFileFromGCS(gsBucket: str, filepath: str):
         print(f"Error fetching file from GCS: {e}")
         return None
 
+# Uploads a file or data buffer to Google Cloud Storage.
 def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case: str, filetype:  Optional[str] = None) -> str:
     try:
         storage_client = storage.Client()
@@ -53,6 +56,7 @@ class PubSubMessage(BaseModel):
     message: dict    
 
 @app.post("/stem-pubsub")
+# Processes audio input and performs core audio transformations.
 def processAudio(pubsub_message: PubSubMessage):
     if "data" not in pubsub_message.message:
         return {"status": "error", "detail": "Invalid Pub/Sub message format"}
@@ -95,6 +99,7 @@ def processAudio(pubsub_message: PubSubMessage):
                     cmd = ["--mp3"]
                     filetype = "audio/mpeg"
                 else:
+                    # Function to handle get encoding.
                     def get_encoding(sample_width):
                         match sample_width:
                             case 3:

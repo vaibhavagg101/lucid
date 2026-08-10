@@ -1,3 +1,4 @@
+# Local test script for generating audio fingerprint images from audio files.
 import sys
 import numpy as np
 from scipy.fft import rfft

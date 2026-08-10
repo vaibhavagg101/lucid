@@ -1,3 +1,4 @@
+# FastAPI web service that extracts musical chords, key, and tempo (BPM) from audio files.
 import base64
 from typing import Optional
 import firebase_admin
@@ -35,6 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Downloads a file from Google Cloud Storage to local disk.
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
         storage_client = storage.Client()
@@ -49,6 +51,7 @@ def getFileFromGCS(gsBucket: str, filepath: str):
         print(f"Error fetching file from GCS: {e}")
         return None
 
+# Uploads a file or data buffer to Google Cloud Storage.
 def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case: str, filetype:  Optional[str] = None) -> str:
     try:
         storage_client = storage.Client()
@@ -67,6 +70,7 @@ def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case:
 
 
 @app.post("/chords-pubsub")
+# Handles incoming Pub/Sub background job triggers.
 def process_pubsub(envelope: dict):
     try:
         if not envelope:

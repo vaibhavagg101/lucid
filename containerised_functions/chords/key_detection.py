@@ -1,3 +1,4 @@
+# Module that determines the overall musical key of a song based on its detected chords.
 import pandas as pd
 import numpy as np
 
@@ -21,6 +22,7 @@ PITCH_MAP = {
     'B': 11, 'Cb': 11
 }
 
+# Parses a chord string into root pitch and chord quality.
 def parse_chord(chord_string):
     if str(chord_string).strip() == 'N':
         return None, None
@@ -39,6 +41,7 @@ def parse_chord(chord_string):
     root_pc = PITCH_MAP[root_str]
     return root_pc, quality
 
+# Maps a musical chord to a 12-note pitch distribution array.
 def chord_to_pitch_distribution(root_pc, quality):
     pitches = np.zeros(12)
     
@@ -72,6 +75,7 @@ def chord_to_pitch_distribution(root_pc, quality):
         
     return pitches
 
+# Generates reference pitch distributions for all major and minor keys.
 def create_key_profiles():
     profiles = {}
     
@@ -90,6 +94,7 @@ def create_key_profiles():
         
     return profiles
 
+# Detects the musical key from a list of chords using key correlation.
 def detect_key_from_chords(csv_file):
     try:
         df = pd.read_csv(csv_file)

@@ -1,8 +1,10 @@
+# Local test script to verify basic-pitch MIDI conversion on test audio files.
 import os
 import argparse
 from basic_pitch.inference import predict_and_save
 from basic_pitch import ICASSP_2022_MODEL_PATH
 
+# Main execution function to run local processing.
 def main():
     parser = argparse.ArgumentParser(description="Test basic-pitch core logic locally.")
     parser.add_argument("--audio", type=str, help="Path to the test audio file (e.g., test_audio.mp3).")

@@ -1,3 +1,4 @@
+# Local test script to convert local MIDI files into formatted guitar tabs.
 import math
 from pathlib import Path
 import pretty_midi
@@ -5,11 +6,13 @@ import pretty_midi
 from tuttut.logic.tab import Tab, fill_measure_str
 from tuttut.logic.theory import Tuning
 
+# Converts time in seconds to a readable MM:SS timestamp.
 def format_time(seconds: float) -> str:
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
 
+# Formats musical notes into readable ASCII guitar tablature with timestamps.
 def build_timestamped_tab_str(tab_obj: Tab, measures_per_line: int = 3) -> str:
     """
     Formats the tuttut Tab object into wrapped multi-line blocks with timestamp headers.
@@ -80,6 +83,7 @@ def build_timestamped_tab_str(tab_obj: Tab, measures_per_line: int = 3) -> str:
         
     return "\n\n".join(res_blocks)
 
+# Main execution function to run local processing.
 def main():
     midi_filename = "test.mid"
     base_dir = Path(__file__).parent.resolve()

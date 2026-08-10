@@ -1,3 +1,4 @@
+# FastAPI web service that converts MIDI music into readable ASCII guitar tablature.
 import base64
 import firebase_admin
 import json
@@ -37,11 +38,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Converts time in seconds to a readable MM:SS timestamp.
 def format_time(seconds: float) -> str:
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
 
+# Formats musical notes into readable ASCII guitar tablature with timestamps.
 def build_timestamped_tab_str(tab_obj: Tab, measures_per_line: int = 3) -> str:
     """
     Formats the tuttut Tab object into wrapped multi-line blocks with timestamp headers.
@@ -112,6 +115,7 @@ def build_timestamped_tab_str(tab_obj: Tab, measures_per_line: int = 3) -> str:
         
     return "\n\n".join(res_blocks)
 
+# Downloads a file from Google Cloud Storage to local disk.
 def download_file_from_gcs(gs_bucket: str, filepath: str, local_path: str):
     try:
         storage_client = storage.Client()
@@ -122,6 +126,7 @@ def download_file_from_gcs(gs_bucket: str, filepath: str, local_path: str):
         print(f"Error fetching file {filepath} from bucket {gs_bucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch file from storage")
 
+# Uploads a file or data buffer to Google Cloud Storage.
 def upload_file_to_gcs(gs_bucket: str, filepath: str, local_path: str, content_type: Optional[str] = None) -> str:
     try:
         storage_client = storage.Client()
@@ -136,6 +141,7 @@ def upload_file_to_gcs(gs_bucket: str, filepath: str, local_path: str, content_t
         print(f"Error uploading file {filepath} to bucket {gs_bucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload file to storage")
 
+# Class representing TabRequest data structure
 class TabRequest(BaseModel):
     gsBucket: str
     filepath: str

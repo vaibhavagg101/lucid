@@ -1,3 +1,4 @@
+# FastAPI web service that removes background noise from audio files stored in Google Cloud Storage.
 import base64
 import firebase_admin
 import io
@@ -39,6 +40,7 @@ app.add_middleware(
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg', 'flac', 'aiff', 'aif'}
 
+# Downloads a file from Google Cloud Storage to local disk.
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
         storage_client = storage.Client()
@@ -54,6 +56,7 @@ def getFileFromGCS(gsBucket: str, filepath: str):
         print(f"Error fetching file {filepath} from bucket {gsBucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch file from storage")
 
+# Uploads a file or data buffer to Google Cloud Storage.
 def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case: str, filetype:  Optional[str] = None) -> str:
     try:
         storage_client = storage.Client()
@@ -70,6 +73,7 @@ def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case:
         print(f"Error uploading file {filepath}/{case} to bucket {gsBucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload file to storage")
 
+# Class representing NoiseReduceRequest data structure
 class NoiseReduceRequest(BaseModel):
     gsBucket: str
     filepath: str
@@ -78,6 +82,7 @@ class NoiseReduceRequest(BaseModel):
     startPoint: Optional[int] = None
     endPoint: Optional[int] = None
 
+# Processes audio input and performs core audio transformations.
 def process_audio(request: NoiseReduceRequest):
     gsBucket = request.gsBucket
     filepath = request.filepath

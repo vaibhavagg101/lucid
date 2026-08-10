@@ -1,3 +1,4 @@
+# FastAPI web service that creates a color spectrogram fingerprint image from an audio file.
 import base64
 import firebase_admin
 import io
@@ -40,6 +41,7 @@ app.add_middleware(
 
 # ALLOWED_EXTENSIONS = {'wav', 'mp3', 'm4a', 'aac', 'webm', 'ogg', 'flac', 'aiff', 'aif'}
 
+# Downloads a file from Google Cloud Storage to local disk.
 def getFileFromGCS(gsBucket: str, filepath: str):
     try:
         storage_client = storage.Client()
@@ -55,6 +57,7 @@ def getFileFromGCS(gsBucket: str, filepath: str):
         print(f"Error fetching file {filepath} from bucket {gsBucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch file from storage")
 
+# Uploads a file or data buffer to Google Cloud Storage.
 def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case: str, filetype:  Optional[str] = None) -> str:
     try:
         storage_client = storage.Client()
@@ -71,6 +74,7 @@ def uploadFileToGCS(gsBucket: str, filepath: str, file_buffer: io.BytesIO, case:
         print(f"Error uploading file {filepath}/{case} to bucket {gsBucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload file to storage")
 
+# Class representing PubSubMessage data structure and operations.
 class PubSubMessage(BaseModel):
     message: dict
 

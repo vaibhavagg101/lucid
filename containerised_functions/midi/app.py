@@ -1,3 +1,4 @@
+# FastAPI web service that converts audio files into MIDI notes using the basic-pitch library.
 import base64
 import firebase_admin
 import json
@@ -32,6 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Downloads a file from Google Cloud Storage to local disk.
 def download_file_from_gcs(gs_bucket: str, filepath: str, local_path: str):
     try:
         storage_client = storage.Client()
@@ -42,6 +44,7 @@ def download_file_from_gcs(gs_bucket: str, filepath: str, local_path: str):
         print(f"Error fetching file {filepath} from bucket {gs_bucket}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch file from storage")
 
+# Uploads a file or data buffer to Google Cloud Storage.
 def upload_file_to_gcs(gs_bucket: str, filepath: str, local_path: str, content_type: Optional[str] = None) -> str:
     try:
         storage_client = storage.Client()
@@ -61,6 +64,7 @@ class MidiRequest(BaseModel):
     filepath: str
     audio_id: str
 
+# Converts audio into a MIDI file 
 def process_midi(request: MidiRequest):
     gs_bucket = request.gsBucket
     filepath = request.filepath

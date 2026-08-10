@@ -1,8 +1,10 @@
+# Local test script to run chord recognition and key detection on sample audio files.
 import os
 import subprocess
 import pandas as pd
 import glob
 
+# Function to handle process chords.
 def process_chords(audio_path):
     """
     Runs chord recognition on an audio file, outputs a .lab file,
@@ -58,6 +60,7 @@ def process_chords(audio_path):
     
     return df
 
+# Unit test for verifying on_lucid_directory functionality.
 def test_on_lucid_directory():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     test_audio_dir = os.path.join(
