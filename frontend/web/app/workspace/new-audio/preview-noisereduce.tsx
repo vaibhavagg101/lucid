@@ -15,9 +15,10 @@ interface PreviewNoiseReduceProps {
     clipStartMs: number | null;
     clipEndMs: number | null;
     handleSelectClip: () => void;
+    handleClearClip?: () => void;
 }
 
-export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelectClip }: PreviewNoiseReduceProps) {
+export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelectClip, handleClearClip }: PreviewNoiseReduceProps) {
     const { user } = useAuth()
 
     const { originalAudioId, fileExt, fileType, changeOriginalAudioBlob, changeCurrentPath, changeError } = useContext(NewAudioContext)
@@ -227,10 +228,26 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                 <button onClick={() => { handleSelectClip(); setNoiseClip(true); }} className="min-w-55 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary hover:bg-primary-variant cursor-pointer transition-colors">
                                     Select Noise Clip
                                 </button>
-                            </div>)}
+
+                                <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">
+                                    Start Noise Reduction without Clip
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setOptedForNoiseReduce(false);
+                                        setNoiseClip(false);
+                                        handleClearClip?.();
+                                    }}
+                                    className="min-w-55 rounded-xl border border-outline/30 bg-transparent px-6 py-3 text-sm font-medium text-on-surface-variant hover:bg-surface-variant/50 cursor-pointer transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
 
                         {!loadingNr && noiseClip ?
-                            <div className="flex items-center justify-center gap-3">
+                            <div className="flex flex-col items-center justify-center gap-3 max-w-full">
                                 {clipStartMs !== null && clipEndMs !== null && (
                                     <span className="text-sm font-medium text-on-surface-variant text-center">
                                         Selected: {clipStartMs}ms - {clipEndMs}ms
@@ -244,7 +261,10 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                 </button>
 
                                 <button
-                                    onClick={() => setNoiseClip(false)}
+                                    onClick={() => {
+                                        setNoiseClip(false);
+                                        handleClearClip?.();
+                                    }}
                                     className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-surface-variant cursor-pointer transition-colors"
                                 >
                                     Cancel
@@ -252,11 +272,6 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                             </div>
                             :
                             null}
-                        {!noiseClip && !nrBlob && !loadingNr && (
-                            <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">
-                                Start Noise Reduction without Clip
-                            </button>
-                        )}
 
                         {loadingNr && <p className="mt-4 text-sm text-on-surface-variant">Processing audio and generating plots...</p>}
 

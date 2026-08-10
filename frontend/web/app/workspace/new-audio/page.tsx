@@ -102,6 +102,14 @@ export default function NewAudio() {
         setClipEndMs(Math.round(end * 1000));
     }, [originalAudioWave]);
 
+    const handleClearClip = useCallback(() => {
+        if (wsRegionsRef.current) {
+            wsRegionsRef.current.clearRegions();
+        }
+        setClipStartMs(null);
+        setClipEndMs(null);
+    }, []);
+
     const handleDownload = () => {
         if (!originalAudioBlob) return;
         const url = URL.createObjectURL(originalAudioBlob);
@@ -361,6 +369,7 @@ export default function NewAudio() {
                                                 clipStartMs={clipStartMs}
                                                 clipEndMs={clipEndMs}
                                                 handleSelectClip={handleSelectClip}
+                                                handleClearClip={handleClearClip}
                                             />;
                                         case "StartAudioProcessing":
                                             return <StartAudioProcessing />;
