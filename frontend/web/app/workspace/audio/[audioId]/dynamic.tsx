@@ -135,7 +135,7 @@ export default function DynamicAudioFile() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`cursor-pointer px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.id
-                                ? 'border-b-2 border-primary text-primary'
+                                ? 'border-b-2 border-primary text-primary dark:border-secondary dark:text-secondary'
                                 : 'text-on-surface-variant hover:text-on-surface'
                                 }`}
                         >
@@ -160,7 +160,7 @@ export default function DynamicAudioFile() {
                 )}
 
                 {error && (
-                    <div className="mt-4 flex w-full items-center justify-between rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-red-700 shadow-sm">
+                    <div className="mt-4 flex w-full items-center justify-between rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-red-700 shadow-sm dark:bg-red-950 dark:text-red-300">
                         <span>{error}</span>
                         <button onClick={() => setError(null)} className="ml-4 cursor-pointer font-bold hover:opacity-75">
                             ✕

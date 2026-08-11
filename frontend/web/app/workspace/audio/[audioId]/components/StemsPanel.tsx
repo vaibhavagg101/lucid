@@ -283,7 +283,7 @@ function StemRow({
                     )}
                 </div>
             </div>
-        
+
 
             {/* Warning + confirm for "other" / "no_vocals" stems */}
             {midiState === 'confirming' && (

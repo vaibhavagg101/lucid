@@ -275,7 +275,7 @@ export default function NewAudio() {
                                                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
                                                                     <svg
                                                                         xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-6 w-6 text-primary"
+                                                                        className="h-6 w-6 text-primary dark:text-secondary"
                                                                         fill="none"
                                                                         viewBox="0 0 24 24"
                                                                         stroke="currentColor"
@@ -305,7 +305,7 @@ export default function NewAudio() {
                                                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
                                                                     <svg
                                                                         xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-6 w-6 text-primary"
+                                                                        className="h-6 w-6 text-primary dark:text-secondary"
                                                                         fill="none"
                                                                         viewBox="0 0 24 24"
                                                                         stroke="currentColor"
@@ -335,7 +335,7 @@ export default function NewAudio() {
                                                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
                                                                     <svg
                                                                         xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-6 w-6 text-primary"
+                                                                        className="h-6 w-6 text-primary dark:text-secondary"
                                                                         fill="none"
                                                                         viewBox="0 0 24 24"
                                                                         stroke="currentColor"
@@ -381,7 +381,7 @@ export default function NewAudio() {
                         }
 
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative my-4 w-[95%] mx-auto flex justify-between items-center shadow-sm">
+                            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded relative my-4 w-[95%] mx-auto flex justify-between items-center shadow-sm">
                                 <span className="block sm:inline">{error}</span>
                                 <button onClick={() => handleChangeError(null)} className="font-bold ml-4 cursor-pointer hover:opacity-75">
                                     ✕

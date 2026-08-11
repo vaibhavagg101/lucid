@@ -32,8 +32,20 @@ https://m2.material.io/design/color/the-color-system.html#color-theme-creation
   --color-on-tertiary: rgb(28, 27, 31);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: rgb(24, 27, 42);
+    --color-background: rgb(10, 12, 22);
+    --color-surface-variant: rgb(35, 38, 55);
+    --color-on-surface: rgb(245, 245, 247);
+    --color-on-background: rgb(245, 245, 247);
+    --color-on-surface-variant: rgb(175, 177, 187);
+    --color-outline: rgb(75, 78, 95);
+  }
+}
+
 body {
-  /* background-color: var(--color-background); */
+  background-color: var(--color-background);
   color: var(--color-on-background);
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
@@ -48,6 +60,12 @@ body {
   backdrop-filter: blur(8px);
   border-radius: 2rem;
   padding: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .glassmorphism-surface {
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.10));
+  }
 }
 
 .workspace-container {

@@ -65,13 +65,13 @@ export default function StartAudioProcessing() {
                                 key={option.value}
                                 onClick={() => handleSelect(option.value)}
                                 disabled={submitting}
-                                className={`flex min-h-45 flex-col items-center justify-center rounded-2xl border p-6 shadow-xs glassmorphism-surface transition-colors hover:shadow-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-outline/30'
+                                className={`flex min-h-45 flex-col items-center justify-center rounded-2xl border p-6 shadow-xs glassmorphism-surface transition-colors hover:shadow-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${isSelected ? 'border-primary ring-2 ring-primary/30 dark:border-secondary dark:ring-secondary/30' : 'border-outline/30'
                                     }`}
                             >
                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
-                                        className="h-6 w-6 text-primary"
+                                        className="h-6 w-6 text-primary dark:text-secondary"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                         stroke="currentColor"

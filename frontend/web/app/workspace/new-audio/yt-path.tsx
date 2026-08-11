@@ -102,7 +102,7 @@ export default function YtPath() {
                                 ref={YTurlRef}
                                 placeholder="https://www.youtube.com/watch?v=..."
                                 disabled
-                                className="w-full rounded-xl border border-outline/30 bg-background px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant disabled:opacity-60"
+                                className="w-full rounded-xl border border-outline/30 bg-surface px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant disabled:opacity-60"
                             />
 
                             <button

@@ -223,7 +223,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                             </div>)}
 
                         {!loadingNr && noiseClip ?
-                            <div className="flex items-center justify-center gap-3">
+                            <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
                                 {clipStartMs !== null && clipEndMs !== null && (
                                     <span className="text-sm font-medium text-on-surface-variant text-center">
                                         Selected: {clipStartMs}ms - {clipEndMs}ms
@@ -231,14 +231,14 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                 )}
                                 <button
                                     onClick={callNoiseReduce}
-                                    className="min-w-55 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary hover:bg-primary-variant cursor-pointer transition-colors"
+                                    className="w-full rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary hover:bg-primary-variant cursor-pointer transition-colors sm:w-auto sm:min-w-55"
                                 >
                                     Confirm Selection
                                 </button>
 
                                 <button
                                     onClick={() => setNoiseClip(false)}
-                                    className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-surface-variant cursor-pointer transition-colors"
+                                    className="w-full rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary dark:border-secondary dark:text-secondary hover:bg-surface-variant cursor-pointer transition-colors sm:w-auto sm:min-w-55"
                                 >
                                     Cancel
                                 </button>
@@ -246,7 +246,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                             :
                             null}
                         {!noiseClip && !nrBlob && !loadingNr && (
-                            <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">
+                            <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary dark:border-secondary dark:text-secondary hover:bg-primary/5 cursor-pointer transition-colors">
                                 Start Noise Reduction without Clip
                             </button>
                         )}
@@ -267,7 +267,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
 
                                 <div>
                                     <h3 className="mb-3 text-lg font-semibold text-on-surface">Noise Reduced Audio</h3>
-                                    <div ref={wavesurferContainerRefNR} className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background"></div>
+                                    <div ref={wavesurferContainerRefNR} className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-surface"></div>
 
                                     <div className="mt-4 flex justify-center">
                                         <button
@@ -303,7 +303,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
 
                                         <button
                                             onClick={pickOG}
-                                            className="min-w-45 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary transition-colors hover:bg-surface-variant cursor-pointer"
+                                            className="min-w-45 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary dark:border-secondary dark:text-secondary transition-colors hover:bg-surface-variant cursor-pointer"
                                         >
                                             Use Original Audio
                                         </button>
@@ -329,7 +329,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                 pickOG()
                                 changeCurrentPath("StartAudioProcessing")
                             }}
-                            className="w-full rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary transition-colors hover:bg-surface-variant cursor-pointer sm:w-auto sm:min-w-67"
+                            className="w-full rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary dark:border-secondary dark:text-secondary transition-colors hover:bg-surface-variant cursor-pointer sm:w-auto sm:min-w-67"
                         >
                             Continue without Noise Reduction
                         </button>
