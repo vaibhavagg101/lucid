@@ -5,7 +5,11 @@ function MainContainer({ children }) {
                 w-full
                 h-full
                 mx-auto
-                bg-surface
+                bg-surface 
+                dark:bg-white/5 
+                dark:border
+                dark:border-white/15 
+                dark:backdrop-blur-xl
                 rounded-2xl
                 px-4
                 py-6

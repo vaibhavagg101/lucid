@@ -41,7 +41,7 @@ export default function DynamicLoginPage() {
     };
 
     return (
-        <div className="main-without-navbar bg-linear-to-b from-primary-variant to-black relative min-w-full min-h-dvh grid lg:grid-cols-2 grid-cols-1 items-center justify-center overflow-hidden">
+        <div className="main-without-navbar bg-background dark:bg-linear-to-b dark:from-primary-variant dark:to-black relative min-w-full min-h-dvh grid lg:grid-cols-2 grid-cols-1 items-center justify-center overflow-hidden">
             <div className="relative z-20 mx-auto justify-self-center lg:block hidden">
                 <Image
                     src={cassetteImage}
@@ -52,12 +52,12 @@ export default function DynamicLoginPage() {
                 <div aria-hidden className="absolute inset-0 mix-blend-screen opacity-[0.09] pointer-events-none" style={cassetteShineStyle} />
             </div>
             {/* Main Card */}
-            <div className="border border-white/15 bg-white/5 backdrop-blur-xl rounded-4xl shadow-2xl shadow-black/50 relative z-20 mx-auto grid grid-cols-1 lg:w-8/12 md:w-10/12 min-h-10/12 w-full items-center justify-center p-8">
+            <div className="border border-outline/30 bg-surface backdrop-blur-xl rounded-4xl shadow-2xl shadow-black/50 dark:border-white/15 dark:bg-white/5 relative z-20 mx-auto grid grid-cols-1 lg:w-8/12 md:w-10/12 min-h-10/12 w-full items-center justify-center p-8">
                 <div className="text-center flex flex-col items-center justify-center space-y-4">
                     <Link href="/">
-                        <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="mx-auto w-96" priority />
+                        <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="mx-auto w-96 invert dark:invert-0" priority />
                     </Link>
-                    <p className="text-lg text-white/70">
+                    <p className="text-lg text-on-surface-variant">
                         Sign in to deconstruct your music and unlock new insights
                     </p>
                 </div>
@@ -74,13 +74,13 @@ export default function DynamicLoginPage() {
                 </div>
                 {/* Sign In Section */}
                 <div className="h-10/12 flex flex-col justify-center items-center space-y-6">
-                    <p className="text-xs font-semibold tracking-[0.2em] uppercase text-white/50 mb-6">
+                    <p className="text-xs font-semibold tracking-[0.2em] uppercase text-on-surface-variant dark:text-white/50 mb-6">
                         Login to your account
                     </p>
                     <button
                         type="button"
                         onClick={() => handleSignIn(signInWithGoogle, 'Google')}
-                        className="w-full md:w-auto px-8 py-3 border border-white/20 bg-white/5 text-white rounded-lg hover:bg-white/10 cursor-pointer flex items-center justify-center gap-3"
+                        className="w-full md:w-auto px-8 py-3 border border-outline/30 bg-surface-variant text-on-surface rounded-lg hover:bg-surface cursor-pointer flex items-center justify-center gap-3 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                     >
                         <Image src={googleColor} alt="Google Logo" className="w-5 h-5" />
                         Sign in with Google
@@ -88,9 +88,9 @@ export default function DynamicLoginPage() {
                     <button
                         type="button"
                         onClick={() => handleSignIn(signInWithGithub, 'GitHub')}
-                        className="w-full md:w-auto px-8 py-3 border border-white/20 bg-white/5 text-white rounded-lg hover:bg-white/10 cursor-pointer flex items-center justify-center gap-3"
+                        className="w-full md:w-auto px-8 py-3 border border-outline/30 bg-surface-variant text-on-surface rounded-lg hover:bg-surface cursor-pointer flex items-center justify-center gap-3 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                     >
-                        <Image src={githubBlack} alt="GitHub Logo" className="w-5 h-5 invert" />
+                        <Image src={githubBlack} alt="GitHub Logo" className="w-5 h-5 dark:invert" />
                         Sign in with GitHub
                     </button>
                     {error ? (

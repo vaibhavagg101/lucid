@@ -353,14 +353,14 @@ export default function RecordPath() {
                     </div>
                 )}
 
-                <div className="mt-8 w-full max-w-125 rounded-3xl border border-outline/30 px-6 py-8 md:px-10">
+                <div className="mt-8 w-full max-w-125 rounded-3xl border border-outline/30 bg-surface px-6 py-8 md:px-10 dark:bg-white/5">
                     {!audioBlob ? (
                         <div className="flex flex-col items-center w-full">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
 
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-6 w-6 text-primary"
+                                    className="h-6 w-6 text-primary dark:text-white/80"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"

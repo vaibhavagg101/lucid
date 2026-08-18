@@ -90,7 +90,7 @@ export default function YtPath() {
                     </p>
                 </div>
 
-                <div className="mt-8 w-full max-w-125 rounded-3xl border border-outline/30 px-6 py-8 text-center md:px-10">
+                <div className="mt-8 w-full max-w-125 rounded-3xl border border-outline/30 bg-surface px-6 py-8 text-center md:px-10 dark:bg-white/5">
                     <div className="rounded-xl bg-tertiary-container px-4 py-3 text-sm text-on-tertiary">
                         This feature is currently blocked due to legal implications.
                     </div>

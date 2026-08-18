@@ -7,6 +7,9 @@ function FilesContainer({ children }) {
                 border
                 border-outline/30
                 glassmorphism-suface
+                dark:bg-white/5
+                dark:border
+                dark:border-white/15
                 shadow-xs
                 px-4
                 py-4

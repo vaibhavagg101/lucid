@@ -163,6 +163,10 @@ function AudioFilesHistorySection({
                                             text-sm
                                             font-medium
                                             text-on-surface
+                                            transition-colors
+                                            hover:bg-surface-variant
+                                            dark:hover:bg-white/10
+                                            dark:hover:border-white/20
                                             sm:w-auto
                                             sm:px-4
                                         "
@@ -186,6 +190,10 @@ function AudioFilesHistorySection({
                                             text-sm
                                             font-medium
                                             text-on-surface
+                                            transition-colors
+                                            hover:bg-surface-variant
+                                            dark:hover:bg-white/10
+                                            dark:hover:border-white/20
                                             sm:w-auto
                                             sm:px-4
                                         "
@@ -212,6 +220,8 @@ function AudioFilesHistorySection({
                                             transition-colors
                                             hover:bg-error
                                             hover:text-on-error
+                                            dark:hover:bg-error/20
+                                            dark:hover:text-error
                                             sm:w-auto
                                             sm:px-4
                                         "

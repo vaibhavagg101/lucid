@@ -12,7 +12,7 @@ function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', cancelL
             aria-modal="true"
         >
             <div
-                className="w-[90%] max-w-sm rounded-2xl bg-surface p-6 shadow-2xl"
+                className="w-[90%] max-w-sm rounded-2xl bg-surface p-6 shadow-2xl dark:bg-white/5 dark:border dark:border-white/15"
                 onClick={(event) => event.stopPropagation()}
             >
                 <h2 className="text-lg font-semibold text-on-surface">{title}</h2>

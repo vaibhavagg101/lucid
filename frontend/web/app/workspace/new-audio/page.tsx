@@ -219,7 +219,7 @@ export default function NewAudio() {
 
                                             <button
                                                 onClick={handleDownload}
-                                                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-surface-variant text-primary transition-colors hover:bg-outline/20"
+                                                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-surface-variant text-primary dark:text-white/80 transition-colors hover:bg-outline/20"
                                                 aria-label="Download audio"
                                             >
                                                 <svg
@@ -267,12 +267,12 @@ export default function NewAudio() {
                                                         <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-10">
                                                             <button
                                                                 onClick={() => setCurrentPath("UploadPath")}
-                                                                className="flex min-h-45 flex-col items-center justify-center rounded-2xl border border-outline/30 shadow-xs glassmorphism-surface p-6 hover:pointer hover:shadow-md cursor-pointer"
+                                                                className="flex min-h-45 flex-col items-center justify-center rounded-2xl border border-outline/30 shadow-xs glassmorphism-surface p-6 cursor-pointer transition-all duration-200 hover:shadow-md dark:hover:bg-white/10 dark:hover:border-white/20 "
                                                             >
                                                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
                                                                     <svg
                                                                         xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-6 w-6 text-primary"
+                                                                        className="h-6 w-6 text-primary dark:text-white/80"
                                                                         fill="none"
                                                                         viewBox="0 0 24 24"
                                                                         stroke="currentColor"
@@ -297,12 +297,12 @@ export default function NewAudio() {
 
                                                             <button
                                                                 onClick={() => setCurrentPath("RecordPath")}
-                                                                className="flex min-h-45 flex-col items-center justify-center rounded-2xl border border-outline/30 shadow-xs glassmorphism-surface p-6 hover:pointer hover:shadow-md cursor-pointer"
+                                                                className="flex min-h-45 flex-col items-center justify-center rounded-2xl border border-outline/30 shadow-xs glassmorphism-surface p-6 cursor-pointer transition-all duration-200 hover:shadow-md dark:hover:bg-white/10 dark:hover:border-white/20 "
                                                             >
                                                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
                                                                     <svg
                                                                         xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-6 w-6 text-primary"
+                                                                        className="h-6 w-6 text-primary dark:text-white/80"
                                                                         fill="none"
                                                                         viewBox="0 0 24 24"
                                                                         stroke="currentColor"
@@ -327,12 +327,12 @@ export default function NewAudio() {
 
                                                             <button
                                                                 onClick={() => setCurrentPath("YtPath")}
-                                                                className="flex min-h-45 flex-col items-center justify-center rounded-2xl border border-outline/30 shadow-xs glassmorphism-surface p-6 hover:pointer hover:shadow-md cursor-pointer"
+                                                                className="flex min-h-45 flex-col items-center justify-center rounded-2xl border border-outline/30 shadow-xs glassmorphism-surface p-6  cursor-pointer transition-all duration-200 hover:shadow-md dark:hover:bg-white/10 dark:hover:border-white/20"
                                                             >
                                                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-variant">
                                                                     <svg
                                                                         xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-6 w-6 text-primary"
+                                                                        className="h-6 w-6 text-primary dark:text-white/80"
                                                                         fill="none"
                                                                         viewBox="0 0 24 24"
                                                                         stroke="currentColor"

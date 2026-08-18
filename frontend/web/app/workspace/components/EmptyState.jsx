@@ -1,7 +1,7 @@
 function EmptyState() {
     return (
         <div className="flex w-full flex-col items-center justify-center px-4 py-12 text-center md:py-16">
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-background">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-background dark:bg-white/5">
                 <svg
                     width="28"
                     height="28"
