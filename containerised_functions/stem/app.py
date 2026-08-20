@@ -111,7 +111,7 @@ def processAudio(pubsub_message: PubSubMessage):
                     filetype = "audio/wav"
                     encoding = get_encoding(AudioSegment.from_file(local_file_path).sample_width)
                     if encoding:
-                        cmd.extend(["--wav", f"{encoding}"])
+                        cmd.append(encoding)
 
                 if stem == 2:
                     cmd.extend(["--two-stems", "vocals"])
@@ -148,8 +148,15 @@ def processAudio(pubsub_message: PubSubMessage):
                     return {"status": "error", "detail": "Failed to save results to Firestore"}
                 
                 return {"status": "success", "uploaded_files": uploaded_files}
-            except Exception as e:
+            except (Exception, SystemExit) as e:
                 print(f"Error during audio separation: {e}")
+                try:
+                    audio_id = filepath.split('/')[2].split('.')[0]
+                    db.collection('audio_files').document(audio_id).update({
+                        'separation_status': 'failed'
+                    })
+                except Exception as db_err:
+                    print(f"Error marking separation as failed: {db_err}")
                 return {"status": "error", "detail": "Audio separation failed"}
             finally:
                 # Cleanup local inputs and outputs regardless of success or failure
@@ -162,6 +169,6 @@ def processAudio(pubsub_message: PubSubMessage):
                 except Exception as cleanup_err:
                     print(f"Error during cleanup: {cleanup_err}")
 
-    except Exception as e:
+    except (Exception, SystemExit) as e:
         print(f"Error processing audio: {e}")
         return {"status": "error", "detail": "Failed to process audio"}
