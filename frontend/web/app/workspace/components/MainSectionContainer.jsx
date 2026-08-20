@@ -5,6 +5,9 @@ function MainSectionContainer({ children }) {
                 w-full
                 min-h-[calc(100vh-4rem)]
                 bg-background
+                dark:bg-linear-to-b
+                dark:from-primary-variant
+                dark:to-black
                 px-4
                 py-6
                 md:px-8

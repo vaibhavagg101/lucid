@@ -61,7 +61,7 @@ export default function AudioPlayer({ audioBlob, downloadName, onTimeUpdate }: A
     }
 
     return (
-        <div className="w-full rounded-3xl border border-outline/30 p-6 md:p-8">
+        <div className="w-full rounded-3xl border border-outline/30 bg-surface p-6 md:p-8">
             <div
                 ref={containerRef}
                 className="w-full overflow-hidden rounded-2xl border border-outline/30 bg-background touch-pan-y"
@@ -91,7 +91,7 @@ export default function AudioPlayer({ audioBlob, downloadName, onTimeUpdate }: A
 
                 <button
                     onClick={handleDownload}
-                    className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-surface-variant text-primary transition-colors hover:bg-outline/20"
+                    className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-surface-variant text-primary dark:text-white/80 transition-colors hover:bg-outline/20"
                     aria-label="Download audio"
                 >
                     <svg

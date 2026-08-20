@@ -421,7 +421,7 @@ function StemRow({
 
             {/* Warning + confirm for "other" / "no_vocals" stems (MIDI) */}
             {midiState === 'confirming' && (
-                <div className="flex flex-col gap-2 rounded-xl border bg-tertiary-container px-4 py-3">
+                <div className="flex flex-col gap-2 rounded-xl border border-outline/30 bg-tertiary-container px-4 py-3">
                     <p className="text-xs font-medium text-on-surface">
                         Best results require a single instrument
                     </p>
@@ -449,7 +449,7 @@ function StemRow({
 
             {/* Warning + confirm for "other" / "no_vocals" stems (Tabs) */}
             {tabsState === 'confirming' && (
-                <div className="flex flex-col gap-2 rounded-xl border bg-tertiary-container px-4 py-3">
+                <div className="flex flex-col gap-2 rounded-xl border border-outline/30 bg-tertiary-container px-4 py-3">
                     <p className="text-xs font-medium text-on-surface">
                         Best results require guitar-like audio
                     </p>

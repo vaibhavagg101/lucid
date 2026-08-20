@@ -1,11 +1,8 @@
 import type { NextConfig } from "next";
 
-// module.exports = {
-//   allowedDevOrigins: ['192.168.0.0/16'],
-// }
-
+//For local mobile testing only
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: ['192.168.29.5'],
 };
 
 export default nextConfig;

@@ -229,7 +229,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                     Select Noise Clip
                                 </button>
 
-                                <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">
+                                <button onClick={callNoiseReduce} className="min-w-55 rounded-xl border border-primary dark:text-white/80 bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-primary/5 cursor-pointer transition-colors">
                                     Start Noise Reduction without Clip
                                 </button>
 
@@ -265,7 +265,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                         setNoiseClip(false);
                                         handleClearClip?.();
                                     }}
-                                    className="min-w-55 rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-surface-variant cursor-pointer transition-colors"
+                                    className="min-w-55 rounded-xl border border-primary dark:text-white/80 bg-transparent px-6 py-3 text-sm font-medium text-primary hover:bg-surface-variant cursor-pointer transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -351,7 +351,7 @@ export default function PreviewNoiseReduce({ clipStartMs, clipEndMs, handleSelec
                                 pickOG()
                                 changeCurrentPath("StartAudioProcessing")
                             }}
-                            className="w-full rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary transition-colors hover:bg-surface-variant cursor-pointer sm:w-auto sm:min-w-67"
+                            className="w-full rounded-xl border border-primary bg-transparent px-6 py-3 text-sm font-medium text-primary dark:text-white/80 transition-colors hover:bg-surface-variant cursor-pointer sm:w-auto sm:min-w-67"
                         >
                             Continue without Noise Reduction
                         </button>
