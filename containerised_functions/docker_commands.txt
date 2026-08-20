@@ -1,5 +1,6 @@
-gcloud auth configure-docker [region]-docker.pkg.dev
-sudo usermod -aG docker $USER
-newgrp docker
-docker build -t [region]-docker.pkg.dev/[project-id]/[artifact-registry-path]:[tag] .
-docker push [region]-docker.pkg.dev/[project-id]/[artifact-registry-path]:[tag]
+To build and push new or updated docker containers using LINUX machine:
+    gcloud auth configure-docker [region]-docker.pkg.dev
+    sudo usermod -aG docker $USER
+    newgrp docker
+    docker build -t [region]-docker.pkg.dev/[project-id]/[artifact-registry-path]:[tag] .
+    docker push [region]-docker.pkg.dev/[project-id]/[artifact-registry-path]:[tag]
