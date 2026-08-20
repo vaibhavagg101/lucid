@@ -508,6 +508,17 @@ export default function StemsPanel({ separatedFiles, separationOption, separatio
     }
 
     if (!separatedFiles || separatedFiles.length === 0) {
+        if (separationStatus === 'failed') {
+            return (
+                <div className="mt-8 w-full rounded-2xl border border-error/40 px-6 py-10 text-center text-sm">
+                    <p className="font-medium text-error">Stem separation failed.</p>
+                    <p className="mt-2 text-on-surface-variant">
+                        This track could not be separated into stems.
+                    </p>
+                </div>
+            );
+        }
+
         return (
             <div className="mt-8 w-full rounded-2xl border border-outline/30 px-6 py-10 text-center text-sm text-on-surface-variant">
                 {separationStatus === 'completed'
