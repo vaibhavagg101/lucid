@@ -1,0 +1,17 @@
+{
+  "name": "lucid-load-test",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=20.12" },
+  "type": "module",
+  "description": "Concurrent end-to-end pipeline load test for LUCID (3/6/9 simultaneous users).",
+  "scripts": {
+    "test": "node run.mjs",
+    "cleanup": "node cleanup.mjs"
+  },
+  "dependencies": {
+    "firebase": "^12.12.1",
+    "firebase-admin": "^13.10.0",
+    "@google-cloud/pubsub": "^5.3.1"
+  }
+}
