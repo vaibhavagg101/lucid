@@ -7,9 +7,32 @@ import AuthGate from "./components/AuthGate";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
+const description =
+  "Audio deconstruction and music analysis web app for musicians.";
+
+const siteUrl = new URL(
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://lucid.vaibhavaggarwal.dev"
+);
+
 export const metadata: Metadata = {
+  metadataBase: siteUrl,
   title: "Home | LUCID",
-  description: "Audio deconstruction and music analysis web app for musicians.",
+  description,
+  applicationName: "LUCID",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "LUCID",
+    url: siteUrl,
+    title: "LUCID",
+    description,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LUCID",
+    description,
+  },
 };
 
 export default function RootLayout({
