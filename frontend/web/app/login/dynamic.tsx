@@ -6,6 +6,7 @@ import { signInWithGoogle, signInWithGithub } from '../google-firebase/authentic
 import Image from 'next/image';
 import Link from 'next/link';
 import lucidLogoOnPrimary from '../../public/master-logo-on-primary.svg';
+import lucidLogoOnSurface from '../../public/master-logo-on-surface.svg';
 import cassetteImage from '../../public/cassette.png';
 import googleColor from '../../public/Google_Color.svg';
 import githubBlack from '../../public/GitHub_Invertocat_Black.svg'
@@ -55,7 +56,8 @@ export default function DynamicLoginPage() {
             <div className="border border-outline/30 bg-surface backdrop-blur-xl rounded-4xl shadow-2xl shadow-black/50 dark:border-white/15 dark:bg-white/5 relative z-20 mx-auto grid grid-cols-1 lg:w-8/12 md:w-10/12 min-h-10/12 w-full items-center justify-center p-8">
                 <div className="text-center flex flex-col items-center justify-center space-y-4">
                     <Link href="/">
-                        <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="mx-auto w-96 invert dark:invert-0" priority />
+                        <Image src={lucidLogoOnSurface} alt="LUCID Logo" className="mx-auto w-96 dark:hidden" priority />
+                        <Image src={lucidLogoOnPrimary} alt="LUCID Logo" className="mx-auto w-96 hidden dark:block" priority />
                     </Link>
                     <p className="text-lg text-on-surface-variant">
                         Sign in to deconstruct your music and unlock new insights
