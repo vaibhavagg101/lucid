@@ -1,0 +1,104 @@
+/*
+  The few landing-page effects Tailwind cannot express: film grain, the edge
+  masks that let the black-background videos dissolve into the page instead of
+  sitting in a box, and the playhead that sweeps the stem panel.
+*/
+
+/* Fine grain over the flat navy fields. Keeps the gradients from banding and
+   stops the page looking like a stock template. */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* The noise-reduction and track-separation clips are drawn on pure black, so
+   screen blending drops the background out entirely. These masks then feather
+   whatever is left into the page. */
+.dissolveRight {
+  /* Feather every edge except the right one, which runs off the viewport. */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 58%),
+    linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 58%),
+    linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.horizon {
+  -webkit-mask-image: radial-gradient(64% 150% at 50% 50%, #000 32%, transparent 90%),
+    linear-gradient(to bottom, transparent 0%, #000 38%, #000 76%, transparent 100%);
+  mask-image: radial-gradient(64% 150% at 50% 50%, #000 32%, transparent 90%),
+    linear-gradient(to bottom, transparent 0%, #000 38%, #000 76%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* Narrow screens put the clip in the flow rather than off the edge, so it
+   should feather on both sides instead of running right. */
+@media (max-width: 1023px) {
+  .dissolveRight {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 24%, #000 76%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 24%, #000 76%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  }
+}
+
+/* Stem panel transport. Both run linear at the same duration, so the tint and
+   the line stay locked together without any JS. */
+@keyframes playheadTravel {
+  from {
+    left: 0%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes playedGrow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.playhead {
+  animation: playheadTravel 18s linear infinite;
+}
+
+.played {
+  transform-origin: left center;
+  animation: playedGrow 18s linear infinite;
+}
+
+/* Thin out the waveform on narrow screens rather than squeezing the bars into
+   sub-pixel slivers. */
+@media (max-width: 639px) {
+  .lane> :nth-child(even) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .playhead,
+  .played {
+    animation: none;
+  }
+
+  .playhead {
+    left: 62%;
+  }
+
+  .played {
+    transform: scaleX(0.62);
+  }
+}
